@@ -5,7 +5,8 @@ export BABYLON_HOME="/main/babylon"
 export BABYLON_CHAIN_HOME="$HOME/.blitz/babylon-test/test01"
 export CHAIN_ID="my-testnet-01"
 
-mkdir -p BABYLON_CHAIN_HOME
+rm -rf $BABYLON_CHAIN_HOME
+mkdir -p $BABYLON_CHAIN_HOME
 
 $BABYLON_HOME/build/babylond --home $BABYLON_CHAIN_HOME init my-node --chain-id $CHAIN_ID
 $BABYLON_HOME/build/babylond --home $BABYLON_CHAIN_HOME prepare-genesis testnet $CHAIN_ID
