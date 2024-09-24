@@ -32,3 +32,5 @@ tarpaulin-report.html
 
 .vscode/
 node_modules/
+finality-gadget-operator
+bin
