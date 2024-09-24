@@ -24,3 +24,11 @@ target/
 .cargo-ok
 *.log
 artifacts/
+target/**
+*/target/**
+**/schema/**
+tarpaulin-report.html
+*.profraw
+
+.vscode/
+node_modules/
