@@ -3,17 +3,17 @@ package client
 import (
 	"fmt"
 
-	"github.com/babylonchain/babylon-finality-gadget/testutils"
-	bbncfg "github.com/babylonchain/babylon/client/config"
+	"github.com/alt-research/blitz/finality-gadget/testutils"
+	bbncfg "github.com/babylonlabs-io/babylon/client/config"
 	"go.uber.org/zap"
 
-	"github.com/babylonchain/babylon-finality-gadget/sdk/bbnclient"
-	"github.com/babylonchain/babylon-finality-gadget/sdk/btcclient"
-	sdkconfig "github.com/babylonchain/babylon-finality-gadget/sdk/config"
+	"github.com/alt-research/blitz/finality-gadget/sdk/bbnclient"
+	"github.com/alt-research/blitz/finality-gadget/sdk/btcclient"
+	sdkconfig "github.com/alt-research/blitz/finality-gadget/sdk/config"
 
-	babylonClient "github.com/babylonchain/babylon/client/client"
+	babylonClient "github.com/babylonlabs-io/babylon/client/client"
 
-	"github.com/babylonchain/babylon-finality-gadget/sdk/cwclient"
+	"github.com/alt-research/blitz/finality-gadget/sdk/cwclient"
 )
 
 // SdkClient is a client that can only perform queries to a Babylon node
