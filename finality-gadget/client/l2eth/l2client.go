@@ -12,7 +12,7 @@ import (
 
 type L2EthClient struct {
 	cfg *Config
-	cli *ethclient.Client
+	*ethclient.Client
 }
 
 type Config struct {
@@ -65,7 +65,7 @@ func NewL2EthClient(ctx context.Context, cfg *Config) (*L2EthClient, error) {
 	}
 
 	return &L2EthClient{
-		cfg: cfg,
-		cli: cli,
+		cfg:    cfg,
+		Client: cli,
 	}, nil
 }
