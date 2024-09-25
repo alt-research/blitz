@@ -38,11 +38,12 @@ func operatorMain(cliCtx *cli.Context) error {
 		log.Fatalf("read config failed by %v", err)
 		return err
 	}
+	config.WithEnv()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	logger, err := logging.NewZapLogger(logging.NewLogLevel(config.Production))
+	logger, err := logging.NewZapLogger(logging.NewLogLevel(config.Common.Production))
 	if err != nil {
 		log.Fatalf("new logger failed by %v", err)
 		return err
@@ -55,6 +56,8 @@ func operatorMain(cliCtx *cli.Context) error {
 		"dirtyBuild", versioninfo.DirtyBuild,
 		"lastCommit", versioninfo.LastCommit,
 	)
+
+	logger.Debug("configs", "cfg", config)
 
 	operatorService, err := operator.NewFinalityGadgetOperatorService(ctx, &config, logger)
 	if err != nil {

@@ -1,0 +1,22 @@
+# Configuration for finality gadget operator.
+
+###############################################################
+# The Common configs ##########################################
+###############################################################
+common:
+  # the service name
+  name: "operator-test"
+
+  # used to set the logger level (true = info, false = debug)
+  production: false
+
+###############################################################
+# The eth layer2 configs ######################################
+###############################################################
+layer2:
+  # the http json rpc url of eth layer2
+  eth_rpc_url: "http://127.0.0.1:8547"
+
+  # the chain id of eth layer2, if not zero, will check if url 's chain id is eq
+  chain_id: 412346
+

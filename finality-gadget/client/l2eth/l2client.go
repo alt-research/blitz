@@ -2,6 +2,9 @@ package l2eth
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/pkg/errors"
@@ -17,6 +20,24 @@ type Config struct {
 	EthRpcUrl string `yaml:"eth_rpc_url"`
 	// The chain id of l2
 	ChainId uint64 `yaml:"chain_id"`
+}
+
+// use the env config first for some keys
+func (c *Config) WithEnv() {
+	ethRpcUrl, ok := os.LookupEnv("FINALITY_GADGET_LAYER2_ETH_RPC_URL")
+	if ok && ethRpcUrl != "" {
+		c.EthRpcUrl = ethRpcUrl
+	}
+
+	chainId, ok := os.LookupEnv("FINALITY_GADGET_LAYER2_CHAIN_ID")
+	if ok && chainId != "" {
+		layer2ChainId, err := strconv.Atoi(chainId)
+		if err != nil {
+			panic(fmt.Sprintf("FINALITY_GADGET_LAYER2_CHAIN_ID parse error: %v", err))
+		}
+
+		c.ChainId = uint64(layer2ChainId)
+	}
 }
 
 func NewL2EthClient(ctx context.Context, cfg *Config) (*L2EthClient, error) {
