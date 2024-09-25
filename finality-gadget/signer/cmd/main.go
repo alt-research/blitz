@@ -1,14 +1,19 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/carlmjohnson/versioninfo"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
 	"github.com/alt-research/blitz/finality-gadget/core/utils"
+	"github.com/alt-research/blitz/finality-gadget/signer"
 	"github.com/alt-research/blitz/finality-gadget/signer/configs"
 )
 
@@ -34,6 +39,9 @@ func signerMain(cliCtx *cli.Context) error {
 		return err
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	logger, err := logging.NewZapLogger(logging.NewLogLevel(config.Production))
 	if err != nil {
 		log.Fatalf("new logger failed by %v", err)
@@ -47,6 +55,19 @@ func signerMain(cliCtx *cli.Context) error {
 		"dirtyBuild", versioninfo.DirtyBuild,
 		"lastCommit", versioninfo.LastCommit,
 	)
+
+	signerService, err := signer.NewFinalityGadgetSignerService(ctx, &config, logger)
+	if err != nil {
+		log.Fatalln("Finality gadget signer new failed", "err", err.Error())
+		return err
+	}
+
+	err = signerService.Start(ctx)
+	if err != nil {
+		return errors.Wrap(err, "start Finality gadget signer failed")
+	}
+
+	signerService.Wait()
 
 	return nil
 }
