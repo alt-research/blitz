@@ -1,14 +1,19 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/carlmjohnson/versioninfo"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
 	"github.com/alt-research/blitz/finality-gadget/core/utils"
+	"github.com/alt-research/blitz/finality-gadget/operator"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
 )
 
@@ -34,6 +39,9 @@ func operatorMain(cliCtx *cli.Context) error {
 		return err
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	logger, err := logging.NewZapLogger(logging.NewLogLevel(config.Production))
 	if err != nil {
 		log.Fatalf("new logger failed by %v", err)
@@ -47,6 +55,19 @@ func operatorMain(cliCtx *cli.Context) error {
 		"dirtyBuild", versioninfo.DirtyBuild,
 		"lastCommit", versioninfo.LastCommit,
 	)
+
+	operatorService, err := operator.NewFinalityGadgetOperatorService(ctx, &config, logger)
+	if err != nil {
+		log.Fatalln("Finality gadget operator new failed", "err", err.Error())
+		return err
+	}
+
+	err = operatorService.Start(ctx)
+	if err != nil {
+		return errors.Wrap(err, "start Finality gadget operator failed")
+	}
+
+	operatorService.Wait()
 
 	return nil
 }
