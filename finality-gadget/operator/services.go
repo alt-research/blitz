@@ -28,11 +28,11 @@ func NewFinalityGadgetOperatorService(
 func (s *FinalityGadgetOperatorService) Start(ctx context.Context) error {
 	s.wg.Add(1)
 	defer func() {
-		s.logger.Info("Stop finality gadget operator service", "name", s.cfg.Name)
+		s.logger.Info("Stop finality gadget operator service", "name", s.cfg.Common.Name)
 		s.wg.Done()
 	}()
 
-	s.logger.Info("Starting finality gadget operator service", "name", s.cfg.Name)
+	s.logger.Info("Starting finality gadget operator service", "name", s.cfg.Common.Name)
 
 	for {
 		select {
