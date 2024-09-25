@@ -1,6 +1,6 @@
 package bbnclient
 
-import btcstakingtypes "github.com/babylonchain/babylon/x/btcstaking/types"
+import btcstakingtypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 
 // we implemented exact logic as in
 // https://github.com/babylonchain/babylon-private/blob/c5a8d317091e2965e20ea56fa10e98d34aaa3547/x/btcstaking/types/btc_delegation.go#L111-L119

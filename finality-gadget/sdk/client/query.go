@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/babylonchain/babylon-finality-gadget/sdk/cwclient"
+	"github.com/alt-research/blitz/finality-gadget/sdk/cwclient"
 )
 
 /* QueryIsBlockBabylonFinalized checks if the given L2 block is finalized by the Babylon finality gadget

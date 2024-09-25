@@ -1,7 +1,7 @@
 package bbnclient
 
 import (
-	"github.com/babylonchain/babylon/client/query"
+	"github.com/babylonlabs-io/babylon/client/query"
 
 	sdkquerytypes "github.com/cosmos/cosmos-sdk/types/query"
 )
@@ -11,18 +11,21 @@ type Client struct {
 }
 
 func (bbnClient *Client) QueryAllFpBtcPubKeys(consumerId string) ([]string, error) {
-	pagination := &sdkquerytypes.PageRequest{}
-	resp, err := bbnClient.QueryClient.QueryConsumerFinalityProviders(consumerId, pagination)
-	if err != nil {
-		return nil, err
-	}
+	/*
+		pagination := &sdkquerytypes.PageRequest{}
+		resp, err := bbnClient.QueryClient.QueryConsumerFinalityProviders(consumerId, pagination)
+		if err != nil {
+			return nil, err
+		}
 
-	var pkArr []string
+		var pkArr []string
 
-	for _, fp := range resp.FinalityProviders {
-		pkArr = append(pkArr, fp.BtcPk.MarshalHex())
-	}
-	return pkArr, nil
+		for _, fp := range resp.FinalityProviders {
+			pkArr = append(pkArr, fp.BtcPk.MarshalHex())
+		}
+		return pkArr, nil
+	*/
+	return nil, nil
 }
 
 func (bbnClient *Client) QueryFpPower(fpPubkeyHex string, btcHeight uint64) (uint64, error) {
