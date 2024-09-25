@@ -9,13 +9,15 @@ import (
 	"github.com/alt-research/blitz/finality-gadget/client/l2eth"
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
+	sdkClient "github.com/alt-research/blitz/finality-gadget/sdk/client"
 )
 
 type FinalityGadgetOperatorService struct {
 	logger logging.Logger
 	cfg    *configs.OperatorConfig
 
-	l2Client *l2eth.L2EthClient
+	l2Client      *l2eth.L2EthClient
+	babylonClient *sdkClient.SdkClient
 
 	wg sync.WaitGroup
 }
@@ -29,11 +31,17 @@ func NewFinalityGadgetOperatorService(
 		return nil, errors.Wrap(err, "failed to create l2 eth client")
 	}
 
+	babylonClient, err := sdkClient.NewClient(cfg.Babylon.ToSdkConfig())
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create babylon client")
+	}
+
 	return &FinalityGadgetOperatorService{
 		logger: logger,
 		cfg:    cfg,
 
-		l2Client: l2Client,
+		l2Client:      l2Client,
+		babylonClient: babylonClient,
 	}, nil
 }
 
