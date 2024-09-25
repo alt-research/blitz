@@ -40,10 +40,13 @@ func operatorMain(cliCtx *cli.Context) error {
 		return err
 	}
 
-	logger.Infof("Version: %s", versioninfo.Version)
-	logger.Infof("Revision: %s", versioninfo.Revision)
-	logger.Infof("DirtyBuild: %v", versioninfo.DirtyBuild)
-	logger.Infof("LastCommit: %s", versioninfo.LastCommit)
+	logger.Info(
+		"Finality gadget operator Start",
+		"version", versioninfo.Version,
+		"revision", versioninfo.Revision,
+		"dirtyBuild", versioninfo.DirtyBuild,
+		"lastCommit", versioninfo.LastCommit,
+	)
 
 	return nil
 }
