@@ -26,7 +26,7 @@ type SdkClient struct {
 }
 
 // NewClient creates a new BabylonFinalityGadgetClient according to the given config
-func NewClient(config *sdkconfig.Config) (*SdkClient, error) {
+func NewClient(config *sdkconfig.Config, zapLogger *zap.Logger) (*SdkClient, error) {
 	rpcAddr, err := config.GetRpcAddr()
 	if err != nil {
 		return nil, err
@@ -35,16 +35,11 @@ func NewClient(config *sdkconfig.Config) (*SdkClient, error) {
 	bbnConfig := bbncfg.DefaultBabylonConfig()
 	bbnConfig.RPCAddr = rpcAddr
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		return nil, err
-	}
-
 	// Note: We can just ignore the below info which is printed by bbnclient.New
 	// service injective.evm.v1beta1.Msg does not have cosmos.msg.v1.service proto annotation
 	babylonClient, err := babylonClient.New(
 		&bbnConfig,
-		logger,
+		zapLogger,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Babylon client: %w", err)
@@ -55,9 +50,9 @@ func NewClient(config *sdkconfig.Config) (*SdkClient, error) {
 	switch config.ChainID {
 	// TODO: once we set up our own local BTC devnet, we don't need to use this mock BTC client
 	case sdkconfig.BabylonLocalnet:
-		btcClient, err = testutils.NewMockBTCClient(config.BTCConfig, logger)
+		btcClient, err = testutils.NewMockBTCClient(config.BTCConfig, zapLogger)
 	default:
-		btcClient, err = btcclient.NewBTCClient(config.BTCConfig, logger)
+		btcClient, err = btcclient.NewBTCClient(config.BTCConfig, zapLogger)
 	}
 	if err != nil {
 		return nil, err

@@ -59,7 +59,7 @@ func operatorMain(cliCtx *cli.Context) error {
 
 	logger.Debug("configs", "cfg", config)
 
-	operatorService, err := operator.NewFinalityGadgetOperatorService(ctx, &config, logger)
+	operatorService, err := operator.NewFinalityGadgetOperatorService(ctx, &config, logger, logger.Inner())
 	if err != nil {
 		log.Fatalln("Finality gadget operator new failed", "err", err.Error())
 		return err

@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/alt-research/blitz/finality-gadget/client/l2eth"
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
@@ -25,13 +26,14 @@ type FinalityGadgetOperatorService struct {
 func NewFinalityGadgetOperatorService(
 	ctx context.Context,
 	cfg *configs.OperatorConfig,
-	logger logging.Logger) (*FinalityGadgetOperatorService, error) {
+	logger logging.Logger,
+	zapLogger *zap.Logger) (*FinalityGadgetOperatorService, error) {
 	l2Client, err := l2eth.NewL2EthClient(ctx, &cfg.Layer2)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create l2 eth client")
 	}
 
-	babylonClient, err := sdkClient.NewClient(cfg.Babylon.ToSdkConfig())
+	babylonClient, err := sdkClient.NewClient(cfg.Babylon.ToSdkConfig(), zapLogger)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create babylon client")
 	}
