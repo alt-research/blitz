@@ -6,12 +6,14 @@ import (
 )
 
 type OperatorConfig struct {
-	Common commonConfig.CommonConfig `yaml:"common,omitempty"`
-	Layer2 l2eth.Config              `yaml:"layer2,omitempty"`
+	Common  commonConfig.CommonConfig  `yaml:"common,omitempty"`
+	Layer2  l2eth.Config               `yaml:"layer2,omitempty"`
+	Babylon commonConfig.BabylonConfig `yaml:"babylon,omitempty"`
 }
 
 // use the env config first for some keys
 func (c *OperatorConfig) WithEnv() {
 	c.Common.WithEnv()
 	c.Layer2.WithEnv()
+	c.Babylon.WithEnv()
 }

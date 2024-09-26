@@ -26,7 +26,8 @@ func NewLogLevel(isProduction bool) LogLevel {
 	}
 }
 
-func NewZapLogger(env LogLevel) (Logger, error) {
+// TODO: add a zap inner for logger interface.
+func NewZapLogger(env LogLevel) (*ZapLogger, error) {
 	config := zap.NewProductionConfig()
 	if env == Development {
 		config = zap.NewDevelopmentConfig()
@@ -48,6 +49,10 @@ func NewZapLogger(env LogLevel) (Logger, error) {
 	return &ZapLogger{
 		logger: logger,
 	}, nil
+}
+
+func (z *ZapLogger) Inner() *zap.Logger {
+	return z.logger
 }
 
 func (z *ZapLogger) Debug(msg string, tags ...any) {
