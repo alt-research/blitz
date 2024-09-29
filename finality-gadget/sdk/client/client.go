@@ -3,13 +3,13 @@ package client
 import (
 	"fmt"
 
-	"github.com/alt-research/blitz/finality-gadget/testutils"
 	bbncfg "github.com/babylonlabs-io/babylon/client/config"
 	"go.uber.org/zap"
 
 	"github.com/alt-research/blitz/finality-gadget/sdk/bbnclient"
 	"github.com/alt-research/blitz/finality-gadget/sdk/btcclient"
 	sdkconfig "github.com/alt-research/blitz/finality-gadget/sdk/config"
+	"github.com/alt-research/blitz/finality-gadget/testutil/mocks"
 
 	babylonClient "github.com/babylonlabs-io/babylon/client/client"
 
@@ -50,18 +50,18 @@ func NewClient(config *sdkconfig.Config, zapLogger *zap.Logger) (*SdkClient, err
 	switch config.ChainID {
 	// TODO: once we set up our own local BTC devnet, we don't need to use this mock BTC client
 	case sdkconfig.BabylonLocalnet:
-		btcClient, err = testutils.NewMockBTCClient(config.BTCConfig, zapLogger)
+		btcClient, err = mocks.NewMockBitcoinClient(config.BTCConfig, zapLogger)
 	default:
-		btcClient, err = btcclient.NewBTCClient(config.BTCConfig, zapLogger)
+		btcClient, err = btcclient.NewBitcoinClient(config.BTCConfig, zapLogger)
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	cwClient := cwclient.NewClient(babylonClient.QueryClient.RPCClient, config.ContractAddr)
+	cwClient := cwclient.NewCosmWasmClient(babylonClient.QueryClient.RPCClient, config.ContractAddr)
 
 	return &SdkClient{
-		bbnClient: &bbnclient.Client{QueryClient: babylonClient.QueryClient},
+		bbnClient: &bbnclient.BabylonClient{QueryClient: babylonClient.QueryClient},
 		cwClient:  cwClient,
 		btcClient: btcClient,
 	}, nil

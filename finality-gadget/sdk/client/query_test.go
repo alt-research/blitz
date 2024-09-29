@@ -7,9 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alt-research/blitz/finality-gadget/sdk/cwclient"
+	"github.com/babylonlabs-io/finality-gadget/types"
+
+	"github.com/alt-research/blitz/finality-gadget/testutil"
 	"github.com/alt-research/blitz/finality-gadget/testutil/mocks"
-	"github.com/alt-research/blitz/finality-gadget/testutils"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -28,13 +29,13 @@ func TestFinalityGadgetDisabled(t *testing.T) {
 	}
 
 	// check QueryIsBlockBabylonFinalized always returns true when finality gadget is not enabled
-	res, err := mockSdkClient.QueryIsBlockBabylonFinalized(cwclient.L2Block{})
+	res, err := mockSdkClient.QueryIsBlockBabylonFinalized(types.Block{})
 	require.NoError(t, err)
 	require.True(t, res)
 }
 
 func TestQueryIsBlockBabylonFinalized(t *testing.T) {
-	blockWithHashUntrimmed := cwclient.L2Block{
+	blockWithHashUntrimmed := types.Block{
 		BlockHash:      "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3",
 		BlockHeight:    123,
 		BlockTimestamp: 12345,
@@ -49,7 +50,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 	testCases := []struct {
 		name           string
 		expectedErr    error
-		queryParams    *cwclient.L2Block
+		queryParams    *types.Block
 		allFpPks       []string
 		fpPowers       map[string]uint64
 		votedProviders []string
@@ -167,28 +168,28 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	l2BlockTime := uint64(2)
-	blockA, blockAWithHashTrimmed := testutils.RandomL2Block(rng)
-	blockB, blockBWithHashTrimmed := testutils.GenL2Block(rng, &blockA, l2BlockTime, 1)
-	blockC, blockCWithHashTrimmed := testutils.GenL2Block(rng, &blockB, l2BlockTime, 1)
-	blockD, blockDWithHashTrimmed := testutils.GenL2Block(rng, &blockC, l2BlockTime, 300) // 10 minutes later
-	blockE, blockEWithHashTrimmed := testutils.GenL2Block(rng, &blockD, l2BlockTime, 1)
-	blockF, blockFWithHashTrimmed := testutils.GenL2Block(rng, &blockE, l2BlockTime, 300)
-	blockG, blockGWithHashTrimmed := testutils.GenL2Block(rng, &blockF, l2BlockTime, 1)
+	blockA, blockAWithHashTrimmed := testutil.RandomL2Block(rng)
+	blockB, blockBWithHashTrimmed := testutil.GenL2Block(rng, &blockA, l2BlockTime, 1)
+	blockC, blockCWithHashTrimmed := testutil.GenL2Block(rng, &blockB, l2BlockTime, 1)
+	blockD, blockDWithHashTrimmed := testutil.GenL2Block(rng, &blockC, l2BlockTime, 300) // 10 minutes later
+	blockE, blockEWithHashTrimmed := testutil.GenL2Block(rng, &blockD, l2BlockTime, 1)
+	blockF, blockFWithHashTrimmed := testutil.GenL2Block(rng, &blockE, l2BlockTime, 300)
+	blockG, blockGWithHashTrimmed := testutil.GenL2Block(rng, &blockF, l2BlockTime, 1)
 
 	testCases := []struct {
 		name         string
 		expectedErr  error
 		expectResult *uint64
-		queryBlocks  []*cwclient.L2Block
+		queryBlocks  []*types.Block
 	}{
-		{"empty query blocks", fmt.Errorf("no blocks provided"), nil, []*cwclient.L2Block{}},
-		{"single block with finalized", nil, &blockA.BlockHeight, []*cwclient.L2Block{&blockA}},
-		{"single block with error", fmt.Errorf("RPC rate limit error"), nil, []*cwclient.L2Block{&blockD}},
-		{"non-consecutive blocks", fmt.Errorf("blocks are not consecutive"), nil, []*cwclient.L2Block{&blockA, &blockD}},
-		{"the first two blocks are finalized and the last block has error", fmt.Errorf("RPC rate limit error"), &blockB.BlockHeight, []*cwclient.L2Block{&blockA, &blockB, &blockC}},
-		{"all consecutive blocks are finalized", nil, &blockB.BlockHeight, []*cwclient.L2Block{&blockA, &blockB}},
-		{"none of the block is finalized and the first block has error", fmt.Errorf("RPC rate limit error"), nil, []*cwclient.L2Block{&blockD, &blockE}},
-		{"none of the block is finalized and the second block has error", nil, nil, []*cwclient.L2Block{&blockF, &blockG}},
+		{"empty query blocks", fmt.Errorf("no blocks provided"), nil, []*types.Block{}},
+		{"single block with finalized", nil, &blockA.BlockHeight, []*types.Block{&blockA}},
+		{"single block with error", fmt.Errorf("RPC rate limit error"), nil, []*types.Block{&blockD}},
+		{"non-consecutive blocks", fmt.Errorf("blocks are not consecutive"), nil, []*types.Block{&blockA, &blockD}},
+		{"the first two blocks are finalized and the last block has error", fmt.Errorf("RPC rate limit error"), &blockB.BlockHeight, []*types.Block{&blockA, &blockB, &blockC}},
+		{"all consecutive blocks are finalized", nil, &blockB.BlockHeight, []*types.Block{&blockA, &blockB}},
+		{"none of the block is finalized and the first block has error", fmt.Errorf("RPC rate limit error"), nil, []*types.Block{&blockD, &blockE}},
+		{"none of the block is finalized and the second block has error", nil, nil, []*types.Block{&blockF, &blockG}},
 	}
 
 	for _, tc := range testCases {
