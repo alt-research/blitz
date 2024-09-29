@@ -34,3 +34,4 @@ tarpaulin-report.html
 node_modules/
 finality-gadget-operator
 bin
+data.db

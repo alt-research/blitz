@@ -12,7 +12,7 @@ package mocks
 import (
 	reflect "reflect"
 
-	cwclient "github.com/alt-research/blitz/finality-gadget/sdk/cwclient"
+	"github.com/babylonlabs-io/finality-gadget/types"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -40,7 +40,7 @@ func (m *MockISdkClient) EXPECT() *MockISdkClientMockRecorder {
 }
 
 // QueryBlockRangeBabylonFinalized mocks base method.
-func (m *MockISdkClient) QueryBlockRangeBabylonFinalized(queryBlocks []*cwclient.L2Block) (*uint64, error) {
+func (m *MockISdkClient) QueryBlockRangeBabylonFinalized(queryBlocks []*types.Block) (*uint64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "QueryBlockRangeBabylonFinalized", queryBlocks)
 	ret0, _ := ret[0].(*uint64)
@@ -55,7 +55,7 @@ func (mr *MockISdkClientMockRecorder) QueryBlockRangeBabylonFinalized(queryBlock
 }
 
 // QueryIsBlockBabylonFinalized mocks base method.
-func (m *MockISdkClient) QueryIsBlockBabylonFinalized(queryParams *cwclient.L2Block) (bool, error) {
+func (m *MockISdkClient) QueryIsBlockBabylonFinalized(queryParams *types.Block) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "QueryIsBlockBabylonFinalized", queryParams)
 	ret0, _ := ret[0].(bool)
