@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/babylonlabs-io/finality-gadget/db"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -17,8 +18,8 @@ type FinalityGadgetOperatorService struct {
 	logger logging.Logger
 	cfg    *configs.OperatorConfig
 
-	l2Client      *l2eth.L2EthClient
-	babylonClient *sdkClient.SdkClient
+	l2Client             *l2eth.L2EthClient
+	finalityGadgetClient sdkClient.IFinalityGadget
 
 	wg sync.WaitGroup
 }
@@ -33,7 +34,18 @@ func NewFinalityGadgetOperatorService(
 		return nil, errors.Wrap(err, "failed to create l2 eth client")
 	}
 
-	babylonClient, err := sdkClient.NewClient(cfg.Babylon.ToSdkConfig(), zapLogger)
+	// Init local DB for storing and querying blocks
+	db, err := db.NewBBoltHandler(cfg.Babylon.FinalityGadget().DBFilePath, zapLogger)
+	if err != nil {
+		return nil, errors.Errorf("failed to create DB handler: %w", err)
+	}
+	defer db.Close()
+	err = db.CreateInitialSchema()
+	if err != nil {
+		return nil, errors.Errorf("create initial buckets error: %w", err)
+	}
+
+	finalityGadgetClient, err := sdkClient.NewFinalityGadget(cfg.Babylon.FinalityGadget(), db, zapLogger)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create babylon client")
 	}
@@ -42,8 +54,8 @@ func NewFinalityGadgetOperatorService(
 		logger: logger,
 		cfg:    cfg,
 
-		l2Client:      l2Client,
-		babylonClient: babylonClient,
+		l2Client:             l2Client,
+		finalityGadgetClient: finalityGadgetClient,
 	}, nil
 }
 
