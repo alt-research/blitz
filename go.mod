@@ -8,7 +8,7 @@ require (
 	github.com/CosmWasm/wasmd v0.51.0
 	github.com/avast/retry-go/v4 v4.6.0
 	github.com/babylonlabs-io/babylon v0.10.0
-	github.com/babylonlabs-io/finality-gadget v0.1.1
+	github.com/babylonlabs-io/finality-gadget v0.1.2-0.20240927145508-5c4f0be1e6be
 	github.com/btcsuite/btcd v0.24.2
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
 	github.com/carlmjohnson/versioninfo v0.22.5
