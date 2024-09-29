@@ -1,6 +1,8 @@
 package client
 
-import "github.com/alt-research/blitz/finality-gadget/sdk/cwclient"
+import (
+	"github.com/babylonlabs-io/finality-gadget/types"
+)
 
 type ISdkClient interface {
 	/* QueryIsBlockBabylonFinalized checks if the given L2 block is finalized by the Babylon finality gadget
@@ -19,7 +21,7 @@ type ISdkClient interface {
 	 *   - calculate voted voting power
 	 *   - check if the voted voting power is more than 2/3 of the total voting power
 	 */
-	QueryIsBlockBabylonFinalized(queryParams cwclient.L2Block) (bool, error)
+	QueryIsBlockBabylonFinalized(queryParams types.Block) (bool, error)
 
 	/* QueryBlockRangeBabylonFinalized searches for a row of consecutive finalized blocks in the block range, and returns
 	 * the last finalized block height
@@ -35,5 +37,5 @@ type ISdkClient interface {
 	 * Note: caller needs to make sure the given queryBlocks are consecutive (we don't check hashes inside this method)
 	 * and start from low to high
 	 */
-	QueryBlockRangeBabylonFinalized(queryBlocks []*cwclient.L2Block) (*uint64, error)
+	QueryBlockRangeBabylonFinalized(queryBlocks []*types.Block) (*uint64, error)
 }

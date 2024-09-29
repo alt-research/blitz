@@ -10,30 +10,38 @@ import (
 	"go.uber.org/zap"
 )
 
-type BTCClient struct {
+type BitcoinClient struct {
 	client *rpcclient.Client
 	logger *zap.Logger
 	cfg    *BTCConfig
 }
 
-func NewBTCClient(cfg *BTCConfig, logger *zap.Logger) (*BTCClient, error) {
+//////////////////////////////
+// CONSTRUCTOR
+//////////////////////////////
+
+func NewBitcoinClient(cfg *BTCConfig, logger *zap.Logger) (*BitcoinClient, error) {
 	c, err := rpcclient.New(cfg.ToConnConfig(), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return &BTCClient{
+	return &BitcoinClient{
 		client: c,
 		logger: logger,
 		cfg:    cfg,
 	}, nil
 }
 
+//////////////////////////////
+// METHODS
+//////////////////////////////
+
 type BlockCountResponse struct {
 	count int64
 }
 
-func (c *BTCClient) GetBlockCount() (uint64, error) {
+func (c *BitcoinClient) GetBlockCount() (uint64, error) {
 	callForBlockCount := func() (*BlockCountResponse, error) {
 		count, err := c.client.GetBlockCount()
 		if err != nil {
@@ -51,7 +59,7 @@ func (c *BTCClient) GetBlockCount() (uint64, error) {
 	return uint64(blockCount.count), nil
 }
 
-func (c *BTCClient) GetBlockHashByHeight(height uint64) (*chainhash.Hash, error) {
+func (c *BitcoinClient) GetBlockHashByHeight(height uint64) (*chainhash.Hash, error) {
 	callForBlockHash := func() (*chainhash.Hash, error) {
 		return c.client.GetBlockHash(int64(height))
 	}
@@ -64,7 +72,7 @@ func (c *BTCClient) GetBlockHashByHeight(height uint64) (*chainhash.Hash, error)
 	return blockHash, nil
 }
 
-func (c *BTCClient) GetBlockHeaderByHash(blockHash *chainhash.Hash) (*wire.BlockHeader, error) {
+func (c *BitcoinClient) GetBlockHeaderByHash(blockHash *chainhash.Hash) (*wire.BlockHeader, error) {
 	callForBlockHeader := func() (*wire.BlockHeader, error) {
 		return c.client.GetBlockHeader(blockHash)
 	}
@@ -77,7 +85,7 @@ func (c *BTCClient) GetBlockHeaderByHash(blockHash *chainhash.Hash) (*wire.Block
 	return header, nil
 }
 
-func (c *BTCClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint64, error) {
+func (c *BitcoinClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint64, error) {
 	// get the height of the most-work fully-validated chain
 	blockHeight, err := c.GetBlockCount()
 	if err != nil {
@@ -90,19 +98,10 @@ func (c *BTCClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint64, e
 	for lowerBound <= upperBound {
 		midHeight := (lowerBound + upperBound) / 2
 
-		// get block hash by height
-		blockHash, err := c.GetBlockHashByHeight(midHeight)
+		blockTimestamp, err := c.GetBlockTimestampByHeight(midHeight)
 		if err != nil {
 			return 0, err
 		}
-
-		// get block header by hash. the header contains info such as the block time expressed in UNIX epoch time
-		blockHeader, err := c.GetBlockHeaderByHash(blockHash)
-		if err != nil {
-			return 0, err
-		}
-
-		blockTimestamp := uint64(blockHeader.Timestamp.Unix())
 
 		if blockTimestamp < targetTimestamp {
 			lowerBound = midHeight + 1
@@ -121,6 +120,26 @@ func (c *BTCClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint64, e
 
 	return lowerBound - 1, nil
 }
+
+func (c *BitcoinClient) GetBlockTimestampByHeight(height uint64) (uint64, error) {
+	// get block hash by height
+	blockHash, err := c.GetBlockHashByHeight(height)
+	if err != nil {
+		return 0, err
+	}
+
+	// get block header by hash. the header contains info such as the block time expressed in UNIX epoch time
+	blockHeader, err := c.GetBlockHeaderByHash(blockHash)
+	if err != nil {
+		return 0, err
+	}
+
+	return uint64(blockHeader.Timestamp.Unix()), nil
+}
+
+//////////////////////////////
+// INTERNAL
+//////////////////////////////
 
 func clientCallWithRetry[T any](
 	call retry.RetryableFuncWithData[*T], logger *zap.Logger, cfg *BTCConfig,
