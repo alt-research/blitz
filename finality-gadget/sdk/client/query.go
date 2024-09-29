@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/alt-research/blitz/finality-gadget/sdk/cwclient"
+	"github.com/babylonlabs-io/finality-gadget/types"
 )
 
 /* QueryIsBlockBabylonFinalized checks if the given L2 block is finalized by the Babylon finality gadget
@@ -24,7 +24,7 @@ import (
  *   - check if the voted voting power is more than 2/3 of the total voting power
  */
 func (sdkClient *SdkClient) QueryIsBlockBabylonFinalized(
-	queryParams cwclient.L2Block,
+	queryParams types.Block,
 ) (bool, error) {
 	// check if the finality gadget is enabled
 	// if not, always return true to pass through op derivation pipeline
@@ -112,7 +112,7 @@ func (sdkClient *SdkClient) QueryIsBlockBabylonFinalized(
  * and start from low to high
  */
 func (sdkClient *SdkClient) QueryBlockRangeBabylonFinalized(
-	queryBlocks []*cwclient.L2Block,
+	queryBlocks []*types.Block,
 ) (*uint64, error) {
 	if len(queryBlocks) == 0 {
 		return nil, fmt.Errorf("no blocks provided")
