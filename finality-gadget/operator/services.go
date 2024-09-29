@@ -11,6 +11,7 @@ import (
 	"github.com/alt-research/blitz/finality-gadget/client/l2eth"
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
+	"github.com/alt-research/blitz/finality-gadget/operator/server"
 	sdkClient "github.com/alt-research/blitz/finality-gadget/sdk/client"
 )
 
@@ -20,6 +21,7 @@ type FinalityGadgetOperatorService struct {
 
 	l2Client             *l2eth.L2EthClient
 	finalityGadgetClient sdkClient.IFinalityGadget
+	rpc                  *server.Server
 
 	wg sync.WaitGroup
 }
@@ -50,12 +52,19 @@ func NewFinalityGadgetOperatorService(
 		return nil, errors.Wrap(err, "failed to create babylon client")
 	}
 
+	rpc := server.NewFinalityGadgetServer(
+		cfg.Babylon.FinalityGadget(),
+		db,
+		finalityGadgetClient,
+		logger)
+
 	return &FinalityGadgetOperatorService{
 		logger: logger,
 		cfg:    cfg,
 
 		l2Client:             l2Client,
 		finalityGadgetClient: finalityGadgetClient,
+		rpc:                  rpc,
 	}, nil
 }
 
@@ -68,6 +77,10 @@ func (s *FinalityGadgetOperatorService) Start(ctx context.Context) error {
 
 	s.logger.Info("Starting finality gadget operator service", "name", s.cfg.Common.Name)
 
+	go func() {
+		s.rpc.Start(ctx)
+	}()
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -77,5 +90,7 @@ func (s *FinalityGadgetOperatorService) Start(ctx context.Context) error {
 }
 
 func (s *FinalityGadgetOperatorService) Wait() {
+	s.rpc.Wait()
+
 	s.wg.Wait()
 }
