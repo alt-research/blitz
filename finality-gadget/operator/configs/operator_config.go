@@ -2,13 +2,14 @@ package configs
 
 import (
 	"github.com/alt-research/blitz/finality-gadget/client/l2eth"
+	"github.com/alt-research/blitz/finality-gadget/core/configs"
 	commonConfig "github.com/alt-research/blitz/finality-gadget/core/configs"
 )
 
 type OperatorConfig struct {
-	Common  commonConfig.CommonConfig  `yaml:"common,omitempty"`
-	Layer2  l2eth.Config               `yaml:"layer2,omitempty"`
-	Babylon commonConfig.BabylonConfig `yaml:"babylon,omitempty"`
+	Common  commonConfig.CommonConfig `yaml:"common,omitempty"`
+	Layer2  l2eth.Config              `yaml:"layer2,omitempty"`
+	Babylon configs.BabylonConfig     `yaml:"babylon,omitempty"`
 }
 
 // use the env config first for some keys
