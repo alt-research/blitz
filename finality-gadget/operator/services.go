@@ -20,6 +20,7 @@ type FinalityGadgetOperatorService struct {
 	cfg    *configs.OperatorConfig
 
 	l2Client             *l2eth.L2EthClient
+	l2BlockHandler       *L2BlockHandler
 	finalityGadgetClient sdkClient.IFinalityGadget
 	rpc                  *server.Server
 
@@ -58,11 +59,15 @@ func NewFinalityGadgetOperatorService(
 		finalityGadgetClient,
 		logger)
 
+	// Init a l2 block handler
+	l2BlockHandler := NewL2BlockHandler(ctx, logger.With("module", "l2BlockHandler"), l2Client)
+
 	return &FinalityGadgetOperatorService{
 		logger: logger,
 		cfg:    cfg,
 
 		l2Client:             l2Client,
+		l2BlockHandler:       l2BlockHandler,
 		finalityGadgetClient: finalityGadgetClient,
 		rpc:                  rpc,
 	}, nil
@@ -81,6 +86,10 @@ func (s *FinalityGadgetOperatorService) Start(ctx context.Context) error {
 		s.rpc.Start(ctx)
 	}()
 
+	go func() {
+		s.l2BlockHandler.Start(ctx)
+	}()
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -91,6 +100,7 @@ func (s *FinalityGadgetOperatorService) Start(ctx context.Context) error {
 
 func (s *FinalityGadgetOperatorService) Wait() {
 	s.rpc.Wait()
+	s.l2BlockHandler.Wait()
 
 	s.wg.Wait()
 }
