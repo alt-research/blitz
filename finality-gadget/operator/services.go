@@ -11,6 +11,7 @@ import (
 	"github.com/alt-research/blitz/finality-gadget/client/l2eth"
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
+	"github.com/alt-research/blitz/finality-gadget/operator/finalityprovider"
 	"github.com/alt-research/blitz/finality-gadget/operator/server"
 	sdkClient "github.com/alt-research/blitz/finality-gadget/sdk/client"
 )
@@ -19,10 +20,11 @@ type FinalityGadgetOperatorService struct {
 	logger logging.Logger
 	cfg    *configs.OperatorConfig
 
-	l2Client             *l2eth.L2EthClient
-	l2BlockHandler       *L2BlockHandler
-	finalityGadgetClient sdkClient.IFinalityGadget
-	rpc                  *server.Server
+	l2Client                *l2eth.L2EthClient
+	l2BlockHandler          *L2BlockHandler
+	finalityGadgetClient    sdkClient.IFinalityGadget
+	finalityProviderService *finalityprovider.FinalityProvider
+	rpc                     *server.Server
 
 	wg sync.WaitGroup
 }
@@ -62,14 +64,25 @@ func NewFinalityGadgetOperatorService(
 	// Init a l2 block handler
 	l2BlockHandler := NewL2BlockHandler(ctx, logger.With("module", "l2BlockHandler"), l2Client)
 
+	// Init finality provider service
+	finalityProviderService, err := finalityprovider.NewFinalityProvider(
+		ctx,
+		&cfg.FinalityProvider,
+		logger.With("module", "finalityProviderService"),
+		zapLogger)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create finality provider service")
+	}
+
 	return &FinalityGadgetOperatorService{
 		logger: logger,
 		cfg:    cfg,
 
-		l2Client:             l2Client,
-		l2BlockHandler:       l2BlockHandler,
-		finalityGadgetClient: finalityGadgetClient,
-		rpc:                  rpc,
+		l2Client:                l2Client,
+		l2BlockHandler:          l2BlockHandler,
+		finalityGadgetClient:    finalityGadgetClient,
+		finalityProviderService: finalityProviderService,
+		rpc:                     rpc,
 	}, nil
 }
 
@@ -90,6 +103,10 @@ func (s *FinalityGadgetOperatorService) Start(ctx context.Context) error {
 		s.l2BlockHandler.Start(ctx)
 	}()
 
+	go func() {
+		s.finalityProviderService.Start(ctx)
+	}()
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -101,6 +118,7 @@ func (s *FinalityGadgetOperatorService) Start(ctx context.Context) error {
 func (s *FinalityGadgetOperatorService) Wait() {
 	s.rpc.Wait()
 	s.l2BlockHandler.Wait()
+	s.finalityProviderService.Wait()
 
 	s.wg.Wait()
 }
