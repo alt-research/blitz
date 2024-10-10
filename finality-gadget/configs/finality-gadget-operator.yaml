@@ -15,7 +15,7 @@ common:
 ###############################################################
 layer2:
   # the http json rpc url of eth layer2
-  eth_rpc_url: "http://127.0.0.1:8547"
+  eth_rpc_url: "http://10.1.1.39:8547"
 
   # the chain id of eth layer2, if not zero, will check if url 's chain id is eq
   chain_id: 412346
@@ -26,9 +26,9 @@ layer2:
 babylon:
   finality_gadget:
     # rpc host address of the L2 node
-    l2rpchost: "http://127.0.0.1:8547"
+    l2rpchost: "http://10.1.1.39:8547"
     # the nitro finality gadget contract address in babylon chain
-    fgcontractaddress: "http://127.0.0.1:8547"
+    fgcontractaddress: "http://10.1.1.39:8547"
     # host:port to listen for gRPC connections
     grpclistener: "0.0.0.0:50051"
     # host:port to listen for HTTP connections
@@ -36,7 +36,7 @@ babylon:
     # the chain id of babylon chain
     bbnchainid: "my-testnet-01"
     # the rpc address url for babylon chain
-    bbnrpcaddress: "http://127.0.0.1:26657"
+    bbnrpcaddress: "http://10.1.1.39:26657"
     # The daemon's rpc listening address.
     bitcoinrpchost: "rpc.ankr.com/btc"
     # Username for RPC connections.
@@ -60,3 +60,23 @@ babylon:
   blockcachesize: 20971520
   # The max number of retries to an RPC call in case of failure.
   maxretrytimes: 5
+
+###############################################################
+# The fp configs ##############################################
+###############################################################
+finalityProvider:
+  # The number of Schnorr public randomness for each commitment
+  num_pub_rand: 3
+  # The upper bound of the number of Schnorr public randomness for each commitment
+  num_pub_rand_max: 8
+  # fp_addr is the bech32 chain address identifier of the finality provider.
+  fp_addr: "bbn15pysduwgj2p99v39aymgn72k2ez3sd9km9662h"
+  # btc_pk is the BTC secp256k1 PK of the finality provider encoded in BIP-340 spec
+  btc_pk: "0x2a1a0154edc6f39055199f15853a28348a97682e763d76dedb8712c769fa08e2"
+  # BabylonChain op finality gadget contract address
+  fg_contract_address: "bbn14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sw76fy2"
+  # BabylonChain chain ID
+  bbn_chain_id: "my-testnet-01"
+  # BabylonChain chain RPC address
+  bbn_rpc_address: "http://10.1.1.39:26657"
+  

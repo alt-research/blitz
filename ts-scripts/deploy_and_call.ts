@@ -8,7 +8,8 @@ import { fromHex } from "@cosmjs/encoding";
 
 import * as fs from "fs";
 
-const rpcEndpoint = "http://localhost:26657";
+// bbn14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sw76fy2
+const rpcEndpoint = "http://10.1.1.39:26657";
 
 // Example user from scripts/wasmd/README.md
 const alice = {
@@ -43,7 +44,7 @@ async function main(hackatomWasmPath: string) {
   // This contract specific message is passed to the contract
   const msg = {
     admin: alice.address0,
-    consumer_id: "orbit-stack-l2-1234000",
+    consumer_id: "orbit-stack-l2",
     activated_height: 1,
     is_enabled: true
   };
