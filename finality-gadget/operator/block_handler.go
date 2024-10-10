@@ -14,6 +14,10 @@ import (
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
 )
 
+type IL2BlockProcesser interface {
+	OnBlock(ctx context.Context, blk *types.Block) error
+}
+
 type L2BlockHandler struct {
 	logger logging.Logger
 	client *l2eth.L2EthClient
@@ -23,6 +27,9 @@ type L2BlockHandler struct {
 	blockInterval      uint64
 	fetchBlockInterval time.Duration
 
+	processers      map[string]IL2BlockProcesser
+	processersMutex sync.RWMutex
+
 	wg sync.WaitGroup
 }
 
@@ -31,9 +38,19 @@ func NewL2BlockHandler(
 	logger logging.Logger,
 	client *l2eth.L2EthClient) *L2BlockHandler {
 	return &L2BlockHandler{
-		logger: logger.With("module", "l2BlockHandler"),
-		client: client,
+		logger:     logger.With("module", "l2BlockHandler"),
+		processers: make(map[string]IL2BlockProcesser, 8),
+		client:     client,
 	}
+}
+
+func (h *L2BlockHandler) AddProcesser(name string, processer IL2BlockProcesser) {
+	h.processersMutex.Lock()
+	defer h.processersMutex.Unlock()
+
+	h.logger.Info("add processer l2", "name", name)
+
+	h.processers[name] = processer
 }
 
 func (h *L2BlockHandler) WithLatestBlock(number uint64, hash common.Hash) {
@@ -158,7 +175,21 @@ func (h *L2BlockHandler) fetchBlock(ctx context.Context, number uint64) error {
 
 func (h *L2BlockHandler) handleBlock(ctx context.Context, number uint64, blk *types.Block) error {
 	hash := blk.Hash()
-	h.logger.Info("handle l2 block", "number", number, "hash", hash)
+	logger := h.logger.With("number", number, "hash", hash)
+	logger.Info("handle l2 block")
+
+	h.processersMutex.RLock()
+	defer h.processersMutex.RUnlock()
+
+	for n, i := range h.processers {
+		logger.Debug("processer handle l2 block", "name", n)
+		err := i.OnBlock(ctx, blk)
+		if err != nil {
+			logger.Error("processer handle l2 block faled", "name", n, "err", err)
+		}
+	}
+
+	logger.Debug("handle l2 block stop")
 
 	return nil
 }
