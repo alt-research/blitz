@@ -5,16 +5,25 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/pkg/errors"
+
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	"github.com/btcsuite/btcd/btcec/v2"
 	rpcclient "github.com/cometbft/cometbft/rpc/client"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
-	"github.com/pkg/errors"
+
+	"github.com/alt-research/blitz/finality-gadget/core/logging"
 )
 
 var _ ICosmosWasmContractClient = &CosmWasmClient{}
 
 type CosmWasmClient struct {
 	rpcclient.Client
+
+	logger logging.Logger
+
+	btcPk        *btcec.PublicKey
+	btcPkHex     string
 	contractAddr string
 }
 
@@ -23,9 +32,17 @@ const (
 	DefaultTimeout = 20 * time.Second
 )
 
-func NewCosmWasmClient(rpcClient rpcclient.Client, contractAddr string) *CosmWasmClient {
+func NewCosmWasmClient(
+	logger logging.Logger,
+	rpcClient rpcclient.Client,
+	btcPk *btcec.PublicKey,
+	btcPkHex string,
+	contractAddr string) *CosmWasmClient {
 	return &CosmWasmClient{
 		Client:       rpcClient,
+		logger:       logger,
+		btcPk:        btcPk,
+		btcPkHex:     btcPkHex,
 		contractAddr: contractAddr,
 	}
 }
