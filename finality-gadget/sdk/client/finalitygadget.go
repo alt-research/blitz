@@ -135,7 +135,7 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.L
 func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(ctx context.Context, block *types.Block) (bool, error) {
 	// check if the finality gadget is enabled
 	// if not, always return true to pass through op derivation pipeline
-	isEnabled, err := fg.cwClient.QueryIsEnabled()
+	isEnabled, err := fg.cwClient.QueryIsEnabled(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -147,7 +147,7 @@ func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(ctx context.Context, bloc
 	block.BlockHash = strings.TrimPrefix(block.BlockHash, "0x")
 
 	// get all FPs pubkey for the consumer chain
-	allFpPks, err := fg.queryAllFpBtcPubKeys()
+	allFpPks, err := fg.queryAllFpBtcPubKeys(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -185,7 +185,7 @@ func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(ctx context.Context, bloc
 	}
 
 	// get all FPs that voted this (L2 block height, L2 block hash) combination
-	votedFpPks, err := fg.cwClient.QueryListOfVotedFinalityProviders(block)
+	votedFpPks, err := fg.cwClient.QueryListOfVotedFinalityProviders(ctx, block)
 	if err != nil {
 		return false, err
 	}
@@ -262,7 +262,7 @@ func (fg *FinalityGadget) QueryBtcStakingActivatedTimestamp(ctx context.Context)
 		// If error is not found, try to query it from the bbnClient
 		if errors.Is(err, types.ErrActivatedTimestampNotFound) {
 			fg.logger.Debug("activation timestamp hasn't been set yet, querying from bbnClient...")
-			return fg.queryBtcStakingActivationTimestamp()
+			return fg.queryBtcStakingActivationTimestamp(ctx)
 		}
 		fg.logger.Error("Failed to get activated timestamp from database", zap.Error(err))
 		return math.MaxUint64, err
@@ -430,9 +430,9 @@ func (fg *FinalityGadget) Close() {
 // INTERNAL
 //////////////////////////////
 
-func (fg *FinalityGadget) queryAllFpBtcPubKeys() ([]string, error) {
+func (fg *FinalityGadget) queryAllFpBtcPubKeys(ctx context.Context) ([]string, error) {
 	// get the consumer chain id
-	consumerId, err := fg.cwClient.QueryConsumerId()
+	consumerId, err := fg.cwClient.QueryConsumerId(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -494,8 +494,8 @@ func (fg *FinalityGadget) handleBlock(ctx context.Context, latestFinalizedHeight
 
 // Query the BTC staking activation timestamp from bbnClient
 // returns math.MaxUint64, ErrBtcStakingNotActivated if the BTC staking is not activated
-func (fg *FinalityGadget) queryBtcStakingActivationTimestamp() (uint64, error) {
-	allFpPks, err := fg.queryAllFpBtcPubKeys()
+func (fg *FinalityGadget) queryBtcStakingActivationTimestamp(ctx context.Context) (uint64, error) {
+	allFpPks, err := fg.queryAllFpBtcPubKeys(ctx)
 	if err != nil {
 		return math.MaxUint64, err
 	}
@@ -530,7 +530,7 @@ func (fg *FinalityGadget) MonitorBtcStakingActivation(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			timestamp, err := fg.queryBtcStakingActivationTimestamp()
+			timestamp, err := fg.queryBtcStakingActivationTimestamp(ctx)
 			if err != nil {
 				if errors.Is(err, types.ErrBtcStakingNotActivated) {
 					fg.logger.Debug("BTC staking not yet activated, waiting...")
