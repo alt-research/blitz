@@ -7,6 +7,7 @@ import (
 
 	bbnclient "github.com/babylonlabs-io/babylon/client/client"
 	bbncfg "github.com/babylonlabs-io/babylon/client/config"
+	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
 	"github.com/alt-research/blitz/finality-gadget/operator/finalityprovider/cwclient"
@@ -22,6 +23,8 @@ type FinalityProvider struct {
 
 	cwClient     cwclient.ICosmosWasmContractClient
 	tickInterval time.Duration
+
+	l2BlocksChan chan *types.Block
 
 	wg sync.WaitGroup
 }
@@ -47,7 +50,12 @@ func NewFinalityProvider(
 		zaplogger,
 	)
 
-	cwClient := cwclient.NewCosmWasmClient(babylonClient.QueryClient.RPCClient, cfg.FgContractAddress)
+	cwClient := cwclient.NewCosmWasmClient(
+		logger.With("module", "cosmWasmClient"),
+		babylonClient.QueryClient.RPCClient,
+		btcPk,
+		cfg.BtcPk,
+		cfg.FgContractAddress)
 
 	return &FinalityProvider{
 		logger:       logger,
