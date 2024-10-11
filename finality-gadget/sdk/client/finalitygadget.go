@@ -132,7 +132,7 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.L
  *   - calculate voted voting power
  *   - check if the voted voting power is more than 2/3 of the total voting power
  */
-func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(block *types.Block) (bool, error) {
+func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(ctx context.Context, block *types.Block) (bool, error) {
 	// check if the finality gadget is enabled
 	// if not, always return true to pass through op derivation pipeline
 	isEnabled, err := fg.cwClient.QueryIsEnabled()
@@ -222,6 +222,7 @@ func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(block *types.Block) (bool
  * and start from low to high
  */
 func (fg *FinalityGadget) QueryBlockRangeBabylonFinalized(
+	ctx context.Context,
 	queryBlocks []*types.Block,
 ) (*uint64, error) {
 	if len(queryBlocks) == 0 {
@@ -235,7 +236,7 @@ func (fg *FinalityGadget) QueryBlockRangeBabylonFinalized(
 	}
 	var finalizedBlockHeight *uint64
 	for _, block := range queryBlocks {
-		isFinalized, err := fg.QueryIsBlockBabylonFinalized(block)
+		isFinalized, err := fg.QueryIsBlockBabylonFinalized(ctx, block)
 		if err != nil {
 			return finalizedBlockHeight, err
 		}
@@ -254,7 +255,7 @@ func (fg *FinalityGadget) QueryBlockRangeBabylonFinalized(
 
 // QueryBtcStakingActivatedTimestamp retrieves BTC staking activation timestamp from the database
 // returns math.MaxUint64, error if any error occurs
-func (fg *FinalityGadget) QueryBtcStakingActivatedTimestamp() (uint64, error) {
+func (fg *FinalityGadget) QueryBtcStakingActivatedTimestamp(ctx context.Context) (uint64, error) {
 	// First, try to get the timestamp from the database
 	timestamp, err := fg.db.GetActivatedTimestamp()
 	if err != nil {
@@ -366,7 +367,7 @@ func (fg *FinalityGadget) ProcessBlocks(ctx context.Context) error {
 			latestFinalizedBlockTime := latestFinalizedBlock.Time
 
 			// get the BTC staking activation timestamp
-			btcStakingActivatedTimestamp, err := fg.QueryBtcStakingActivatedTimestamp()
+			btcStakingActivatedTimestamp, err := fg.QueryBtcStakingActivatedTimestamp(ctx)
 			if err != nil {
 				if errors.Is(err, types.ErrBtcStakingNotActivated) {
 					fg.logger.Info("BTC staking not yet activated, waiting...")
@@ -469,7 +470,7 @@ func (fg *FinalityGadget) handleBlock(ctx context.Context, latestFinalizedHeight
 			}
 
 			// Check the block is babylon finalized using sdk client
-			isFinal, err := fg.QueryIsBlockBabylonFinalized(block)
+			isFinal, err := fg.QueryIsBlockBabylonFinalized(ctx, block)
 			if err != nil && !errors.Is(err, types.ErrBtcStakingNotActivated) {
 				return fmt.Errorf("error checking block %d: %v", block.BlockHeight, err)
 			}
