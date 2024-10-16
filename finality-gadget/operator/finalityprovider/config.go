@@ -1,9 +1,14 @@
 package finalityprovider
 
 import (
+	"fmt"
+	"net/url"
+	"time"
+
 	"github.com/alt-research/blitz/finality-gadget/core/utils"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
+	"github.com/cosmos/relayer/v2/relayer/chains/cosmos"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/pkg/errors"
 )
@@ -23,6 +28,8 @@ type Config struct {
 	BbnChainID string `yaml:"bbn_chain_id,omitempty"`
 	// BabylonChain chain RPC address
 	BbnRpcAddress string `yaml:"bbn_rpc_address,omitempty"`
+	// The cosmwasm config
+	Cosmwasm CosmwasmConfig `yaml:"cosmwasm,omitempty"`
 }
 
 func (c *Config) WithEnv() {
@@ -45,4 +52,62 @@ func (c *Config) GetBtcPk() (*btcec.PublicKey, error) {
 	}
 
 	return btcPk, nil
+}
+
+func (cfg *Config) ToCosmosProviderConfig() cosmos.CosmosProviderConfig {
+	return cfg.Cosmwasm.ToCosmosProviderConfig()
+}
+
+// CosmwasmConfig defines configuration for the Babylon client
+// adapted from https://github.com/strangelove-ventures/lens/blob/v0.5.1/client/config.go
+type CosmwasmConfig struct {
+	Key              string        `yaml:"key"`
+	ChainID          string        `yaml:"chain_id,omitempty"`
+	RPCAddr          string        `yaml:"rpc_addr,omitempty"`
+	GRPCAddr         string        `yaml:"grpc_addr,omitempty"`
+	AccountPrefix    string        `yaml:"account_prefix,omitempty"`
+	KeyringBackend   string        `yaml:"keyring_backend,omitempty"`
+	GasAdjustment    float64       `yaml:"gas_adjustment,omitempty"`
+	GasPrices        string        `yaml:"gas_prices,omitempty"`
+	KeyDirectory     string        `yaml:"key_directory,omitempty"`
+	Debug            bool          `yaml:"debug,omitempty"`
+	Timeout          time.Duration `yaml:"timeout,omitempty"`
+	BlockTimeout     time.Duration `yaml:"block_timeout,omitempty"`
+	OutputFormat     string        `yaml:"output_format,omitempty"`
+	SignModeStr      string        `yaml:"sign_mode,omitempty"`
+	SubmitterAddress string        `yaml:"submitter_address,omitempty"`
+}
+
+func (cfg *CosmwasmConfig) Validate() error {
+	if _, err := url.Parse(cfg.RPCAddr); err != nil {
+		return fmt.Errorf("rpc-addr is not correctly formatted: %w", err)
+	}
+
+	if cfg.Timeout <= 0 {
+		return fmt.Errorf("timeout must be positive")
+	}
+
+	if cfg.BlockTimeout < 0 {
+		return fmt.Errorf("block-timeout can't be negative")
+	}
+
+	return nil
+}
+
+func (cfg *CosmwasmConfig) ToCosmosProviderConfig() cosmos.CosmosProviderConfig {
+	return cosmos.CosmosProviderConfig{
+		Key:            cfg.Key,
+		ChainID:        cfg.ChainID,
+		RPCAddr:        cfg.RPCAddr,
+		AccountPrefix:  cfg.AccountPrefix,
+		KeyringBackend: cfg.KeyringBackend,
+		GasAdjustment:  cfg.GasAdjustment,
+		GasPrices:      cfg.GasPrices,
+		KeyDirectory:   cfg.KeyDirectory,
+		Debug:          cfg.Debug,
+		Timeout:        cfg.Timeout.String(),
+		BlockTimeout:   cfg.BlockTimeout.String(),
+		OutputFormat:   cfg.OutputFormat,
+		SignModeStr:    cfg.SignModeStr,
+	}
 }

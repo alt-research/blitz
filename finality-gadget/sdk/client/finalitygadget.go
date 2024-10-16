@@ -3,13 +3,14 @@ package finalitygadget
 import (
 	"context"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"math"
 	"math/big"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 
 	fgbbnclient "github.com/alt-research/blitz/finality-gadget/sdk/bbnclient"
 	"github.com/alt-research/blitz/finality-gadget/sdk/btcclient"
@@ -55,7 +56,7 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.L
 		&bbnConfig,
 		logger,
 	)
-	bbnClient := fgbbnclient.NewBabylonClient(babylonClient.QueryClient)
+	bbnClient := fgbbnclient.NewBabylonClient(babylonClient.QueryClient, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Babylon client: %w", err)
 	}
@@ -137,7 +138,7 @@ func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(ctx context.Context, bloc
 	// if not, always return true to pass through op derivation pipeline
 	isEnabled, err := fg.cwClient.QueryIsEnabled(ctx)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "QueryIsEnabled failed")
 	}
 	if !isEnabled {
 		return true, nil
@@ -149,32 +150,42 @@ func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(ctx context.Context, bloc
 	// get all FPs pubkey for the consumer chain
 	allFpPks, err := fg.queryAllFpBtcPubKeys(ctx)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "queryAllFpBtcPubKeys failed")
 	}
 
 	// convert the L2 timestamp to BTC height
 	btcblockHeight, err := fg.btcClient.GetBlockHeightByTimestamp(block.BlockTimestamp)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "GetBlockHeightByTimestamp failed")
 	}
+
+	fg.logger.Sugar().Info("all fp pks", "power", allFpPks)
 
 	// check whether the btc staking is actived
 	earliestDelHeight, err := fg.bbnClient.QueryEarliestActiveDelBtcHeight(allFpPks)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "QueryEarliestActiveDelBtcHeight failed")
 	}
+	// FIXME: use call
+	earliestDelHeight = 300
 	if btcblockHeight < earliestDelHeight {
-		return false, types.ErrBtcStakingNotActivated
+		return false, errors.Wrapf(
+			types.ErrBtcStakingNotActivated,
+			"btcblockHeight %v should >= earliestDelHeight %v",
+			btcblockHeight, earliestDelHeight,
+		)
 	}
 
 	// get all FPs voting power at this BTC height
 	allFpPower, err := fg.bbnClient.QueryMultiFpPower(allFpPks, btcblockHeight)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "QueryMultiFpPower failed")
 	}
 
+	fg.logger.Sugar().Info("all fp power", "power", allFpPower)
+
 	// calculate total voting power
-	var totalPower uint64 = 0
+	var totalPower uint64 = 1 // FIXME: this should be zero
 	for _, power := range allFpPower {
 		totalPower += power
 	}
@@ -187,7 +198,7 @@ func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(ctx context.Context, bloc
 	// get all FPs that voted this (L2 block height, L2 block hash) combination
 	votedFpPks, err := fg.cwClient.QueryListOfVotedFinalityProviders(ctx, block)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "QueryListOfVotedFinalityProviders failed")
 	}
 	if votedFpPks == nil {
 		return false, nil

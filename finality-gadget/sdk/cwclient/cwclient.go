@@ -9,6 +9,7 @@ import (
 	"github.com/babylonlabs-io/finality-gadget/types"
 	rpcclient "github.com/cometbft/cometbft/rpc/client"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
+	"github.com/pkg/errors"
 )
 
 type CosmWasmClient struct {
@@ -85,12 +86,12 @@ func (cwClient *CosmWasmClient) QueryIsEnabled(ctx context.Context) (bool, error
 
 	resp, err := cwClient.querySmartContractState(ctx, queryData)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "querySmartContractState")
 	}
 
 	var isEnabled bool
 	if err := json.Unmarshal(resp.Data, &isEnabled); err != nil {
-		return false, err
+		return false, errors.Wrap(err, "Unmarshal")
 	}
 
 	return isEnabled, nil

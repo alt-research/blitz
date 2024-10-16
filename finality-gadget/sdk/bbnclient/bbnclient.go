@@ -5,40 +5,41 @@ import (
 
 	"github.com/babylonlabs-io/babylon/client/query"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+	"go.uber.org/zap"
 
 	sdkquerytypes "github.com/cosmos/cosmos-sdk/types/query"
 )
 
 type BabylonClient struct {
 	*query.QueryClient
+	logger *zap.Logger
 }
 
 //////////////////////////////
 // CONSTRUCTOR
 //////////////////////////////
 
-func NewBabylonClient(queryClient *query.QueryClient) *BabylonClient {
+func NewBabylonClient(queryClient *query.QueryClient, logger *zap.Logger) *BabylonClient {
 	return &BabylonClient{
 		QueryClient: queryClient,
+		logger:      logger,
 	}
 }
 
 func (bbnClient *BabylonClient) QueryAllFpBtcPubKeys(consumerId string) ([]string, error) {
-	/*
-		pagination := &sdkquerytypes.PageRequest{}
-		resp, err := bbnClient.QueryClient.QueryConsumerFinalityProviders(consumerId, pagination)
-		if err != nil {
-			return nil, err
-		}
+	// FIXME: need use pub keys
+	pagination := &sdkquerytypes.PageRequest{}
+	resp, err := bbnClient.QueryClient.FinalityProviders(pagination)
+	if err != nil {
+		return nil, err
+	}
 
-		var pkArr []string
+	var pkArr []string
 
-		for _, fp := range resp.FinalityProviders {
-			pkArr = append(pkArr, fp.BtcPk.MarshalHex())
-		}
-		return pkArr, nil
-	*/
-	return nil, nil
+	for _, fp := range resp.FinalityProviders {
+		pkArr = append(pkArr, fp.BtcPk.MarshalHex())
+	}
+	return pkArr, nil
 }
 
 func (bbnClient *BabylonClient) QueryFpPower(fpPubkeyHex string, btcHeight uint64) (uint64, error) {
@@ -93,8 +94,12 @@ func (bbnClient *BabylonClient) QueryMultiFpPower(
 func (bbnClient *BabylonClient) QueryEarliestActiveDelBtcHeight(fpPkHexList []string) (uint64, error) {
 	allFpEarliestDelBtcHeight := uint64(math.MaxUint64)
 
+	bbnClient.logger.Sugar().Debug("QueryEarliestActiveDelBtcHeight", "fpPkHexList", fpPkHexList)
+
 	for _, fpPkHex := range fpPkHexList {
 		fpEarliestDelBtcHeight, err := bbnClient.QueryFpEarliestActiveDelBtcHeight(fpPkHex)
+		bbnClient.logger.Sugar().Debug("QueryFpEarliestActiveDelBtcHeight",
+			"fpPkHex", fpPkHex, "fpEarliestDelBtcHeight", fpEarliestDelBtcHeight)
 		if err != nil {
 			return math.MaxUint64, err
 		}
@@ -116,6 +121,11 @@ func (bbnClient *BabylonClient) QueryFpEarliestActiveDelBtcHeight(fpPubkeyHex st
 	if err != nil {
 		return math.MaxUint64, err
 	}
+
+	bbnClient.logger.Sugar().Debug(
+		"FinalityProviderDelegations",
+		"fpPubkeyHex", fpPubkeyHex,
+		"resp", resp.BtcDelegatorDelegations)
 
 	// queries BtcConfirmationDepth, CovenantQuorum, and the latest BTC header
 	btccheckpointParams, err := bbnClient.QueryClient.BTCCheckpointParams()

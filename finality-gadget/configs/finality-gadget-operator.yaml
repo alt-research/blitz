@@ -20,6 +20,9 @@ layer2:
   # the chain id of eth layer2, if not zero, will check if url 's chain id is eq
   chain_id: 412346
 
+  # the activated_height number for layer2
+  activated_height: 32
+
 ###############################################################
 # The babylon configs ######################################
 ###############################################################
@@ -28,7 +31,7 @@ babylon:
     # rpc host address of the L2 node
     l2rpchost: "http://10.1.1.39:8547"
     # the nitro finality gadget contract address in babylon chain
-    fgcontractaddress: "http://10.1.1.39:8547"
+    fgcontractaddress: "bbn14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sw76fy2"
     # host:port to listen for gRPC connections
     grpclistener: "0.0.0.0:50051"
     # host:port to listen for HTTP connections
@@ -38,13 +41,13 @@ babylon:
     # the rpc address url for babylon chain
     bbnrpcaddress: "http://10.1.1.39:26657"
     # The daemon's rpc listening address.
-    bitcoinrpchost: "rpc.ankr.com/btc"
+    bitcoinrpchost: "10.1.1.120:18443"
     # Username for RPC connections.
-    bitcoinrpcuser: "user"
+    bitcoinrpcuser: "test"
     # Password for RPC connections.
-    bitcoinrpcpass: "pass"
+    bitcoinrpcpass: "123456"
     # disable TLS for RPC connections
-    bitcoindisabletls: false
+    bitcoindisabletls: true
     # The time interval between each retry.
     pollinterval: "10s"
     # path to the DB file
@@ -70,7 +73,7 @@ finalityProvider:
   # The upper bound of the number of Schnorr public randomness for each commitment
   num_pub_rand_max: 8
   # fp_addr is the bech32 chain address identifier of the finality provider.
-  fp_addr: "bbn15pysduwgj2p99v39aymgn72k2ez3sd9km9662h"
+  fp_addr: "bbn1pe0zs8sxju20kmn7jpxvzppmzemwhxla5s09df"
   # btc_pk is the BTC secp256k1 PK of the finality provider encoded in BIP-340 spec
   btc_pk: "0x2a1a0154edc6f39055199f15853a28348a97682e763d76dedb8712c769fa08e2"
   # BabylonChain op finality gadget contract address
@@ -79,4 +82,19 @@ finalityProvider:
   bbn_chain_id: "my-testnet-01"
   # BabylonChain chain RPC address
   bbn_rpc_address: "http://10.1.1.39:26657"
-  
+  cosmwasm:
+    key: "fp"
+    chain_id: "my-testnet-01"
+    rpc_addr: "http://10.1.1.39:26657"
+    grpc_addr: "http://10.1.1.39:9090"
+    account_prefix: "bbn"
+    keyring_backend: "test"
+    gas_adjustment: 1.5
+    gas_prices: "0.002ubbn"
+    key_directory: "/home/.blitz/keyring/"
+    debug: true
+    timeout: 20s
+    block_timeout: 1m0s
+    output_format: json
+    sign_mode: direct
+    submitter_address: "bbn1pe0zs8sxju20kmn7jpxvzppmzemwhxla5s09df"

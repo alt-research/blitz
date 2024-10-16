@@ -3,6 +3,7 @@ package cwclient
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -11,6 +12,7 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 	rpcclient "github.com/cometbft/cometbft/rpc/client"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/relayer/v2/relayer/chains/cosmos"
 
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
 )
@@ -25,6 +27,11 @@ type CosmWasmClient struct {
 	btcPk        *btcec.PublicKey
 	btcPkHex     string
 	contractAddr string
+	fpAddr       string
+
+	mu sync.Mutex
+
+	provider *cosmos.CosmosProvider
 }
 
 const (
@@ -37,13 +44,17 @@ func NewCosmWasmClient(
 	rpcClient rpcclient.Client,
 	btcPk *btcec.PublicKey,
 	btcPkHex string,
-	contractAddr string) *CosmWasmClient {
+	contractAddr string,
+	fpAddr string,
+	provider *cosmos.CosmosProvider) *CosmWasmClient {
 	return &CosmWasmClient{
 		Client:       rpcClient,
 		logger:       logger,
 		btcPk:        btcPk,
 		btcPkHex:     btcPkHex,
 		contractAddr: contractAddr,
+		fpAddr:       fpAddr,
+		provider:     provider,
 	}
 }
 
