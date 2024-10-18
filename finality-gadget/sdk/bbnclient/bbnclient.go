@@ -145,9 +145,9 @@ func (bbnClient *BabylonClient) QueryFpEarliestActiveDelBtcHeight(fpPubkeyHex st
 		return math.MaxUint64, err
 	}
 
-	kValue := btccheckpointParams.GetParams().BtcConfirmationDepth
+	kValue := uint64(btccheckpointParams.GetParams().BtcConfirmationDepth)
 	covQuorum := btcstakingParams.GetParams().CovenantQuorum
-	latestBtcHeight := btcHeader.GetHeader().Height
+	latestBtcHeight := uint64(btcHeader.GetHeader().Height)
 
 	earliestBtcHeight := uint64(math.MaxUint64)
 	for {
@@ -206,7 +206,7 @@ func (bbnClient *BabylonClient) isDelegationActive(
 	// the k-value check is added per
 	//
 	// So in our case, we need to check both to ensure the delegation is active
-	if btcHeight < btcDel.StartHeight+kValue || btcHeight+wValue > btcDel.EndHeight {
+	if uint32(btcHeight) < btcDel.StartHeight+kValue || uint32(btcHeight)+wValue > btcDel.EndHeight {
 		return false, nil
 	}
 
@@ -231,7 +231,7 @@ func (bbnClient *BabylonClient) isDelegationActive(
 //
 // Note: the delegation can be unbounded and that's totally fine and shouldn't affect when the chain was activated
 func getDelFirstActiveHeight(btcDel *bbntypes.BTCDelegationResponse, latestBtcHeight, kValue uint64, covQuorum uint32) uint64 {
-	activationHeight := btcDel.StartHeight + kValue
+	activationHeight := uint64(btcDel.StartHeight) + kValue
 	// not activated yet
 	if latestBtcHeight < activationHeight || uint32(len(btcDel.CovenantSigs)) < covQuorum {
 		return math.MaxUint64
