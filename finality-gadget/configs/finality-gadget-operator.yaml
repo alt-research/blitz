@@ -31,7 +31,7 @@ babylon:
     # rpc host address of the L2 node
     l2rpchost: "http://10.1.1.39:8547"
     # the nitro finality gadget contract address in babylon chain
-    fgcontractaddress: "bbn14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sw76fy2"
+    fgcontractaddress: "bbn17p9rzwnnfxcjp32un9ug7yhhzgtkhvl9jfksztgw5uh69wac2pgs6spw0g"
     # host:port to listen for gRPC connections
     grpclistener: "0.0.0.0:50051"
     # host:port to listen for HTTP connections
@@ -72,12 +72,13 @@ finalityProvider:
   num_pub_rand: 3
   # The upper bound of the number of Schnorr public randomness for each commitment
   num_pub_rand_max: 8
+  minrandheightgap: 35000
   # fp_addr is the bech32 chain address identifier of the finality provider.
-  fp_addr: "bbn1pe0zs8sxju20kmn7jpxvzppmzemwhxla5s09df"
+  fp_addr: "bbn1vj7fa46npnlwnmclf7lygmu38qxjs8mx2e2ulx"
   # btc_pk is the BTC secp256k1 PK of the finality provider encoded in BIP-340 spec
-  btc_pk: "0x2a1a0154edc6f39055199f15853a28348a97682e763d76dedb8712c769fa08e2"
+  btc_pk: "0x577adbcb4a5f4857a29551888e85340efe40bac101ad8540e2cb374117f84d3f"
   # BabylonChain op finality gadget contract address
-  fg_contract_address: "bbn14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sw76fy2"
+  fg_contract_address: "bbn17p9rzwnnfxcjp32un9ug7yhhzgtkhvl9jfksztgw5uh69wac2pgs6spw0g"
   # BabylonChain chain ID
   bbn_chain_id: "my-testnet-01"
   # BabylonChain chain RPC address
@@ -91,10 +92,10 @@ finalityProvider:
     keyring_backend: "test"
     gas_adjustment: 1.5
     gas_prices: "0.002ubbn"
-    key_directory: "/home/.blitz/keyring/"
+    key_directory: "/home/fy/.blitz/keyring/"
     debug: true
     timeout: 20s
     block_timeout: 1m0s
     output_format: json
     sign_mode: direct
-    submitter_address: "bbn1pe0zs8sxju20kmn7jpxvzppmzemwhxla5s09df"
+    submitter_address: "bbn1vj7fa46npnlwnmclf7lygmu38qxjs8mx2e2ulx"

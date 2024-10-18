@@ -5,17 +5,23 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/pkg/errors"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
+	fpeotsmanager "github.com/babylonlabs-io/finality-provider/eotsmanager"
+
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
+	"github.com/alt-research/blitz/finality-gadget/operator/finalityprovider/cwclient"
 	sdkClient "github.com/alt-research/blitz/finality-gadget/sdk/client"
 )
 
 type L2BlockCommitter struct {
 	logger logging.Logger
+	cfg    *Config
+	BtcPk  *btcec.PublicKey
 
 	pendingL2Blocks map[uint64]*types.Block
 
@@ -34,18 +40,25 @@ type L2BlockCommitter struct {
 	activatedHeight uint64
 
 	finalityGadgetClient sdkClient.IFinalityGadget
+	cwClient             cwclient.ICosmosWasmContractClient
+	em                   fpeotsmanager.EOTSManager
 
 	mu sync.Mutex
 }
 
 func NewL2BlockCommitter(
 	logger logging.Logger,
+	cfg *Config,
 	finalityGadgetClient sdkClient.IFinalityGadget,
+	cwClient cwclient.ICosmosWasmContractClient,
 	activatedHeight uint64,
+	BtcPk *btcec.PublicKey,
 ) *L2BlockCommitter {
 	return &L2BlockCommitter{
 		logger:               logger.With("module", "l2BlockCommitter"),
+		cfg:                  cfg,
 		finalityGadgetClient: finalityGadgetClient,
+		cwClient:             cwClient,
 		activatedHeight:      activatedHeight,
 		pendingL2Blocks:      make(map[uint64]*types.Block, 32),
 	}
@@ -290,7 +303,13 @@ func (c *L2BlockCommitter) TryCommitPendingBlock(ctx context.Context) error {
 }
 
 func (c *L2BlockCommitter) commitBlock(ctx context.Context, blk *types.Block) error {
-	c.logger.Info("commit block", "number", blk.NumberU64(), "hash", blk.Hash())
+	number := blk.NumberU64()
+	c.logger.Info("commit block", "number", number, "hash", blk.Hash())
+
+	err := c.CommitPublicRandomness(ctx, number)
+	if err != nil {
+		return errors.Wrapf(err, "commit public random failed with %d", number)
+	}
 
 	return nil
 }

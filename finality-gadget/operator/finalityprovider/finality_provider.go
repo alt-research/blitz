@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cosmos/relayer/v2/relayer/chains/cosmos"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -34,8 +33,6 @@ type FinalityProvider struct {
 	wg sync.WaitGroup
 }
 
-var _ IFinalityProvider = &FinalityProvider{}
-
 func NewFinalityProvider(
 	ctx context.Context,
 	cfg *Config,
@@ -58,27 +55,17 @@ func NewFinalityProvider(
 		zaplogger,
 	)
 
-	provider, err := cfg.ToCosmosProviderConfig().NewProvider(
-		zaplogger,
-		"", // TODO: set home path
-		true,
-		cfg.BbnChainID,
-	)
+	cp, err := NewProvider(ctx, cfg, zaplogger)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "new provider failed")
 	}
 
-	cp := provider.(*cosmos.CosmosProvider)
-	cp.PCfg.KeyDirectory = cfg.Cosmwasm.KeyDirectory
-
-	// initialise Cosmos provider
-	// NOTE: this will create a RPC client. The RPC client will be used for
-	// submitting txs and making ad hoc queries. It won't create WebSocket
-	// connection with wasmd node
-	err = cp.Init(ctx)
+	key, err := cp.GetKeyAddressForKey(cfg.Cosmwasm.Key)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to get key address for %v", cfg.Cosmwasm.Key)
 	}
+
+	zaplogger.Sugar().Debug("key address", "name", cfg.Cosmwasm.Key, "address", key)
 
 	cwClient := cwclient.NewCosmWasmClient(
 		logger.With("module", "cosmWasmClient"),
@@ -89,7 +76,13 @@ func NewFinalityProvider(
 		cfg.FpAddr,
 		cp)
 
-	committer := NewL2BlockCommitter(logger, finalityGadgetClient, activatedHeight)
+	committer := NewL2BlockCommitter(
+		logger,
+		cfg,
+		finalityGadgetClient,
+		cwClient,
+		activatedHeight,
+		btcPk)
 
 	return &FinalityProvider{
 		logger:               logger,

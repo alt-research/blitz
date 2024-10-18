@@ -18,6 +18,8 @@ type Config struct {
 	NumPubRand uint64 `yaml:"num_pub_rand,omitempty"`
 	// The upper bound of the number of Schnorr public randomness for each commitment
 	NumPubRandMax uint64 `yaml:"num_pub_rand_max,omitempty"`
+	// The minimum gap between the last committed rand height and the current Babylon block height
+	MinRandHeightGap uint32 `yaml:"minrandheightgap,omitempty"`
 	// fp_addr is the bech32 chain address identifier of the finality provider.
 	FpAddr string `yaml:"fp_addr,omitempty"`
 	// btc_pk is the BTC secp256k1 PK of the finality provider encoded in BIP-340 spec

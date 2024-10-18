@@ -13,6 +13,14 @@ import (
 	wdtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 )
 
+type CommitPublicRandomness struct {
+	FpPubkeyHex string `json:"fp_pubkey_hex"`
+	StartHeight uint64 `json:"start_height"`
+	NumPubRand  uint64 `json:"num_pub_rand"`
+	Commitment  string `json:"commitment"`
+	Signature   string `json:"signature"`
+}
+
 func (c *CosmWasmClient) CommitPublicRandomness(
 	ctx context.Context,
 	startHeight uint64,
@@ -26,28 +34,35 @@ func (c *CosmWasmClient) CommitPublicRandomness(
 		"numPubRand", numPubRand,
 	)
 
-	execMsg, err := json.Marshal(struct {
-		FpPubkeyHex string `json:"fp_pubkey_hex"`
-		StartHeight uint64 `json:"start_height"`
-		NumPubRand  uint64 `json:"num_pub_rand"`
-		Commitment  string `json:"commitment"`
-		Signature   string `json:"signature"`
-	}{
-		FpPubkeyHex: c.btcPkHex,
-		StartHeight: startHeight,
-		NumPubRand:  numPubRand,
-		Commitment:  hexutil.Encode(commitment),
-		Signature:   hexutil.Encode(signature),
-	})
+	msg := make(map[string]json.RawMessage)
+	execMsg, err := json.Marshal(
+		CommitPublicRandomness{
+			FpPubkeyHex: c.btcPkHex,
+			StartHeight: startHeight,
+			NumPubRand:  numPubRand,
+			Commitment:  hexutil.Encode(commitment),
+			Signature:   hexutil.Encode(signature),
+		},
+	)
 	if err != nil {
 		return errors.Wrap(err, "CommitPublicRandomness Marshal msg failed")
+	}
+	msg["commit_public_randomness"] = execMsg
+
+	msgBytes, err := json.Marshal(
+		msg,
+	)
+	if err != nil {
+		return errors.Wrap(err, "CommitPublicRandomness msgBytes Marshal msg failed")
 	}
 
 	executeMsg := &wdtypes.MsgExecuteContract{
 		Sender:   c.fpAddr,
 		Contract: c.contractAddr,
-		Msg:      []byte(execMsg),
+		Msg:      []byte(msgBytes),
 	}
+
+	c.logger.Debug("CommitPublicRandomness msgBytes", "json", string(msgBytes))
 
 	tx, err := c.ReliablySendMsg(context.Background(), executeMsg, nil, nil)
 	if err != nil {
