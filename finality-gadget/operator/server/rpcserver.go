@@ -38,7 +38,7 @@ func (r *rpcServer) RegisterWithGrpcServer(grpcServer *grpc.Server) error {
 
 // QueryIsBlockBabylonFinalized is an RPC method that returns the finality status of a block by querying Babylon chain.
 func (r *rpcServer) QueryIsBlockBabylonFinalized(ctx context.Context, req *proto.QueryIsBlockBabylonFinalizedRequest) (*proto.QueryIsBlockFinalizedResponse, error) {
-	isFinalized, err := r.fg.QueryIsBlockBabylonFinalized(&types.Block{
+	isFinalized, err := r.fg.QueryIsBlockBabylonFinalized(ctx, &types.Block{
 		BlockHash:      req.Block.BlockHash,
 		BlockHeight:    req.Block.BlockHeight,
 		BlockTimestamp: req.Block.BlockTimestamp,
@@ -62,7 +62,7 @@ func (r *rpcServer) QueryBlockRangeBabylonFinalized(ctx context.Context, req *pr
 		})
 	}
 
-	blockHeight, err := r.fg.QueryBlockRangeBabylonFinalized(blocks)
+	blockHeight, err := r.fg.QueryBlockRangeBabylonFinalized(ctx, blocks)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (r *rpcServer) QueryBlockRangeBabylonFinalized(ctx context.Context, req *pr
 
 // QueryBtcStakingActivatedTimestamp is an RPC method that returns the timestamp when BTC staking was activated.
 func (r *rpcServer) QueryBtcStakingActivatedTimestamp(ctx context.Context, req *proto.QueryBtcStakingActivatedTimestampRequest) (*proto.QueryBtcStakingActivatedTimestampResponse, error) {
-	timestamp, err := r.fg.QueryBtcStakingActivatedTimestamp()
+	timestamp, err := r.fg.QueryBtcStakingActivatedTimestamp(ctx)
 	if err != nil {
 		return nil, err
 	}

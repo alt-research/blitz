@@ -50,7 +50,11 @@ func NewFinalityGadgetOperatorService(
 		return nil, errors.Errorf("create initial buckets error: %w", err)
 	}
 
-	finalityGadgetClient, err := sdkClient.NewFinalityGadget(cfg.Babylon.FinalityGadget(), db, zapLogger)
+	finalityGadgetClient, err := sdkClient.NewFinalityGadget(
+		cfg.Babylon.FinalityGadget(),
+		db,
+		zapLogger,
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create babylon client")
 	}
@@ -69,10 +73,15 @@ func NewFinalityGadgetOperatorService(
 		ctx,
 		&cfg.FinalityProvider,
 		logger.With("module", "finalityProviderService"),
-		zapLogger)
+		zapLogger,
+		finalityGadgetClient,
+		cfg.Layer2.ActivatedHeight,
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create finality provider service")
 	}
+
+	l2BlockHandler.AddProcesser("finityprovider", finalityProviderService)
 
 	return &FinalityGadgetOperatorService{
 		logger: logger,

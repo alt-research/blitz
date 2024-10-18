@@ -15,7 +15,4 @@ type IFinalityProvider interface {
 	GetPublicRandomnessList(ctx context.Context, startHeight uint64, numPubRand uint64) ([]*btcec.FieldVal, error)
 	// Submit finality signature to wasm contract
 	SubmitFinalitySignature(ctx context.Context, block *types.Block) (*fptypes.TxResponse, error)
-	// SubmitBatchFinalitySignatures builds and sends a finality signature over the given block to the consumer chain
-	// NOTE: the input blocks should be in the ascending order of height
-	SubmitBatchFinalitySignatures(ctx context.Context, blocks []*types.Block) (*fptypes.TxResponse, error)
 }

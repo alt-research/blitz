@@ -1,6 +1,7 @@
 package finalitygadget
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -31,7 +32,7 @@ func TestFinalityGadgetDisabled(t *testing.T) {
 	}
 
 	// check QueryIsBlockBabylonFinalized always returns true when finality gadget is not enabled
-	res, err := mockFinalityGadget.QueryIsBlockBabylonFinalized(&types.Block{})
+	res, err := mockFinalityGadget.QueryIsBlockBabylonFinalized(context.TODO(), &types.Block{})
 	require.NoError(t, err)
 	require.True(t, res)
 }
@@ -185,7 +186,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 				btcClient: mockBTCClient,
 			}
 
-			res, err := mockFinalityGadget.QueryIsBlockBabylonFinalized(tc.block)
+			res, err := mockFinalityGadget.QueryIsBlockBabylonFinalized(context.TODO(), tc.block)
 			require.Equal(t, tc.expectResult, res)
 			require.Equal(t, tc.expectedErr, err)
 		})
@@ -256,7 +257,7 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 			mockBBNClient.EXPECT().QueryAllFpBtcPubKeys("consumer-chain-id").Return([]string{"pk1", "pk2", "pk3"}, nil).AnyTimes()
 			mockBBNClient.EXPECT().QueryMultiFpPower([]string{"pk1", "pk2", "pk3"}, gomock.Any()).Return(map[string]uint64{"pk1": 100, "pk2": 200, "pk3": 300}, nil).AnyTimes()
 
-			res, err := mockFinalityGadget.QueryBlockRangeBabylonFinalized(tc.queryBlocks)
+			res, err := mockFinalityGadget.QueryBlockRangeBabylonFinalized(context.TODO(), tc.queryBlocks)
 			require.Equal(t, tc.expectResult, res)
 			require.Equal(t, tc.expectedErr, err)
 		})
@@ -596,7 +597,7 @@ func TestQueryBtcStakingActivatedTimestamp(t *testing.T) {
 
 	// Test case 1: Timestamp is already in the database
 	mockDbHandler.EXPECT().GetActivatedTimestamp().Return(uint64(1234567890), nil)
-	timestamp, err := mockFinalityGadget.QueryBtcStakingActivatedTimestamp()
+	timestamp, err := mockFinalityGadget.QueryBtcStakingActivatedTimestamp(context.TODO())
 	require.NoError(t, err)
 	require.Equal(t, uint64(1234567890), timestamp)
 
@@ -607,7 +608,7 @@ func TestQueryBtcStakingActivatedTimestamp(t *testing.T) {
 	mockBBNClient.EXPECT().QueryEarliestActiveDelBtcHeight([]string{"pk1", "pk2"}).Return(uint64(100), nil)
 	mockBTCClient.EXPECT().GetBlockTimestampByHeight(uint64(100)).Return(uint64(1234567890), nil)
 
-	timestamp, err = mockFinalityGadget.QueryBtcStakingActivatedTimestamp()
+	timestamp, err = mockFinalityGadget.QueryBtcStakingActivatedTimestamp(context.TODO())
 	require.NoError(t, err)
 	require.Equal(t, uint64(1234567890), timestamp)
 
@@ -617,7 +618,7 @@ func TestQueryBtcStakingActivatedTimestamp(t *testing.T) {
 	mockBBNClient.EXPECT().QueryAllFpBtcPubKeys("consumer-chain-id").Return([]string{"pk1", "pk2"}, nil)
 	mockBBNClient.EXPECT().QueryEarliestActiveDelBtcHeight([]string{"pk1", "pk2"}).Return(uint64(math.MaxUint64), nil)
 
-	timestamp, err = mockFinalityGadget.QueryBtcStakingActivatedTimestamp()
+	timestamp, err = mockFinalityGadget.QueryBtcStakingActivatedTimestamp(context.TODO())
 	require.Equal(t, types.ErrBtcStakingNotActivated, err)
 	require.Equal(t, uint64(math.MaxUint64), timestamp)
 }

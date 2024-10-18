@@ -26,6 +26,25 @@ func main() {
 	app.Description = "Service that send the finality-gadget by FPs to babylon's contract"
 
 	app.Action = operatorMain
+	app.Commands = []cli.Command{
+		{
+			Name:    "keys",
+			Aliases: []string{"k"},
+			Usage:   "subcommand for keys",
+			Subcommands: []cli.Command{
+				{
+					Name:   "restore",
+					Usage:  "restore keys from mnemonic",
+					Action: keysRestore,
+				},
+				{
+					Name:   "show",
+					Usage:  "show address for key",
+					Action: keysShow,
+				},
+			},
+		},
+	}
 	err := app.Run(os.Args)
 	if err != nil {
 		log.Fatalln("Application failed.", "Message:", err)

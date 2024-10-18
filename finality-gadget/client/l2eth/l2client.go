@@ -20,6 +20,8 @@ type Config struct {
 	EthRpcUrl string `yaml:"eth_rpc_url"`
 	// The chain id of l2
 	ChainId uint64 `yaml:"chain_id"`
+	// The activated_height
+	ActivatedHeight uint64 `yaml:"activated_height"`
 }
 
 // use the env config first for some keys
