@@ -9,6 +9,7 @@ import (
 	"github.com/babylonlabs-io/finality-gadget/types"
 	rpcclient "github.com/cometbft/cometbft/rpc/client"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
+	"github.com/pkg/errors"
 )
 
 type CosmWasmClient struct {
@@ -37,6 +38,7 @@ func NewCosmWasmClient(rpcClient rpcclient.Client, contractAddr string) *CosmWas
 //////////////////////////////
 
 func (cwClient *CosmWasmClient) QueryListOfVotedFinalityProviders(
+	ctx context.Context,
 	queryParams *types.Block,
 ) ([]string, error) {
 	queryData, err := createBlockVotersQueryData(queryParams)
@@ -44,7 +46,7 @@ func (cwClient *CosmWasmClient) QueryListOfVotedFinalityProviders(
 		return nil, err
 	}
 
-	resp, err := cwClient.querySmartContractState(queryData)
+	resp, err := cwClient.querySmartContractState(ctx, queryData)
 	if err != nil {
 		return nil, err
 	}
@@ -57,13 +59,13 @@ func (cwClient *CosmWasmClient) QueryListOfVotedFinalityProviders(
 	return *votedFpPkHexList, nil
 }
 
-func (cwClient *CosmWasmClient) QueryConsumerId() (string, error) {
+func (cwClient *CosmWasmClient) QueryConsumerId(ctx context.Context) (string, error) {
 	queryData, err := createConfigQueryData()
 	if err != nil {
 		return "", err
 	}
 
-	resp, err := cwClient.querySmartContractState(queryData)
+	resp, err := cwClient.querySmartContractState(ctx, queryData)
 	if err != nil {
 		return "", err
 	}
@@ -76,20 +78,20 @@ func (cwClient *CosmWasmClient) QueryConsumerId() (string, error) {
 	return data.ConsumerId, nil
 }
 
-func (cwClient *CosmWasmClient) QueryIsEnabled() (bool, error) {
+func (cwClient *CosmWasmClient) QueryIsEnabled(ctx context.Context) (bool, error) {
 	queryData, err := createIsEnabledQueryData()
 	if err != nil {
 		return false, err
 	}
 
-	resp, err := cwClient.querySmartContractState(queryData)
+	resp, err := cwClient.querySmartContractState(ctx, queryData)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "querySmartContractState")
 	}
 
 	var isEnabled bool
 	if err := json.Unmarshal(resp.Data, &isEnabled); err != nil {
-		return false, err
+		return false, errors.Wrap(err, "Unmarshal")
 	}
 
 	return isEnabled, nil
@@ -156,9 +158,10 @@ func createIsEnabledQueryData() ([]byte, error) {
 
 // querySmartContractState queries the smart contract state given the contract address and query data
 func (cwClient *CosmWasmClient) querySmartContractState(
+	ctx context.Context,
 	queryData []byte,
 ) (*wasmtypes.QuerySmartContractStateResponse, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	ctx, cancel := context.WithTimeout(ctx, DefaultTimeout)
 	defer cancel()
 
 	sdkClientCtx := cosmosclient.Context{Client: cwClient.Client}

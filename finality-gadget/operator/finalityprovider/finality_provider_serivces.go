@@ -23,6 +23,13 @@ func (fp *FinalityProvider) Start(ctx context.Context) {
 			select {
 			case <-ctx.Done():
 				return
+			case blk := <-fp.l2BlocksChan:
+				fp.logger.Debug("on new l2 block", "number", blk.NumberU64())
+				fp.committer.Append(blk)
+				err := fp.committer.TryCommitPendingBlock(ctx)
+				if err != nil {
+					fp.logger.Error("tryCommitPendingBlock failed", "err", err)
+				}
 			case <-ticker.C:
 				fp.logger.Debug("on finality provider ticker")
 				err := fp.tick(ctx)
@@ -31,7 +38,6 @@ func (fp *FinalityProvider) Start(ctx context.Context) {
 				}
 			}
 		}
-
 	}()
 }
 
@@ -47,6 +53,11 @@ func (fp *FinalityProvider) tick(ctx context.Context) error {
 	}
 
 	fp.logger.Debug("cw", "isEnable", isEnable, "config", config)
+
+	err = fp.committer.TryCommitPendingBlock(ctx)
+	if err != nil {
+		fp.logger.Error("tryCommitPendingBlock on tick failed", "err", err)
+	}
 
 	return nil
 }

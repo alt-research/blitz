@@ -5,17 +5,23 @@ go 1.22.0
 toolchain go1.22.6
 
 require (
+	cosmossdk.io/errors v1.0.1
+	cosmossdk.io/log v1.4.1
 	github.com/CosmWasm/wasmd v0.51.0
 	github.com/avast/retry-go/v4 v4.6.0
 	github.com/babylonlabs-io/babylon v0.11.0
 	github.com/babylonlabs-io/finality-gadget v0.1.2-0.20241003113442-8d38bf769d20
 	github.com/babylonlabs-io/finality-provider v0.6.0
 	github.com/btcsuite/btcd v0.24.2
+	github.com/btcsuite/btcd/btcec/v2 v2.3.2
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
 	github.com/carlmjohnson/versioninfo v0.22.5
 	github.com/cometbft/cometbft v0.38.10
+	github.com/cosmos/cosmos-db v1.0.2
 	github.com/cosmos/cosmos-sdk v0.50.9
+	github.com/cosmos/relayer/v2 v2.5.2
 	github.com/ethereum/go-ethereum v1.14.7
+	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b
 	github.com/pkg/errors v0.9.1
 	github.com/rs/cors v1.11.1
 	github.com/stretchr/testify v1.9.0
@@ -36,8 +42,6 @@ require (
 	cosmossdk.io/collections v0.4.0 // indirect
 	cosmossdk.io/core v0.11.1 // indirect
 	cosmossdk.io/depinject v1.0.0 // indirect
-	cosmossdk.io/errors v1.0.1 // indirect
-	cosmossdk.io/log v1.4.1 // indirect
 	cosmossdk.io/math v1.3.0 // indirect
 	cosmossdk.io/store v1.1.0 // indirect
 	cosmossdk.io/x/circuit v0.1.0 // indirect
@@ -63,7 +67,6 @@ require (
 	github.com/bgentry/speakeasy v0.1.1-0.20220910012023-760eaf8b6816 // indirect
 	github.com/bits-and-blooms/bitset v1.13.0 // indirect
 	github.com/boljen/go-bitmap v0.0.0-20151001105940-23cd2fb0ce7d // indirect
-	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
 	github.com/btcsuite/btcd/btcutil v1.1.6 // indirect
 	github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f // indirect
 	github.com/btcsuite/btcwallet/walletdb v1.4.0 // indirect
@@ -85,7 +88,6 @@ require (
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/cosmos/btcutil v1.0.5 // indirect
-	github.com/cosmos/cosmos-db v1.0.2 // indirect
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5 // indirect
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
@@ -96,7 +98,6 @@ require (
 	github.com/cosmos/ibc-go/v8 v8.3.2 // indirect
 	github.com/cosmos/ics23/go v0.11.0 // indirect
 	github.com/cosmos/ledger-cosmos-go v0.13.3 // indirect
-	github.com/cosmos/relayer/v2 v2.5.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
 	github.com/crate-crypto/go-ipa v0.0.0-20231025140028-3c0104f4b233 // indirect
 	github.com/crate-crypto/go-kzg-4844 v0.7.0 // indirect
@@ -186,7 +187,6 @@ require (
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/jsternberg/zap-logfmt v1.3.0 // indirect
-	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kkdai/bstream v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.10 // indirect
@@ -320,6 +320,7 @@ require (
 replace (
 	// use cosmos fork of keyring
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
+	github.com/cosmos/relayer/v2 => github.com/fyInALT/relayer/v2 v2.5.2-1
 	github.com/ethereum/go-ethereum => github.com/fyInALT/nitro-go-ethereum v0.0.0-20241007111826-12add618b009
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
