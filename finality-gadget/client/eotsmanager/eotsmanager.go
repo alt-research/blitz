@@ -21,6 +21,10 @@ type Config struct {
 	RemoteAddr string `yaml:"remote_address"`
 }
 
+func (c *Config) WithEnv() {
+	// TODO
+}
+
 // Create eots manager client
 func NewEOTSManagerClient(cfg Config) (*EOTSManagerClient, error) {
 	cli, err := client.NewEOTSManagerGRpcClient(cfg.RemoteAddr)

@@ -12,8 +12,10 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	bbnclient "github.com/babylonlabs-io/babylon/client/client"
+	bbncfg "github.com/babylonlabs-io/babylon/client/config"
 	bbntypes "github.com/babylonlabs-io/babylon/types"
 	btcstakingtypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	finalitytypes "github.com/babylonlabs-io/babylon/x/finality/types"
@@ -23,6 +25,8 @@ import (
 
 	"github.com/alt-research/blitz/finality-gadget/client/l2eth"
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
+	"github.com/alt-research/blitz/finality-gadget/operator/configs"
+	"github.com/alt-research/blitz/finality-gadget/operator/finalityprovider"
 	"github.com/alt-research/blitz/finality-gadget/operator/finalityprovider/cwclient"
 )
 
@@ -38,8 +42,73 @@ type WasmContractController struct {
 	cwClient  cwclient.ICosmosWasmContractClient
 
 	// The activated_height
-	ActivatedHeight uint64
-	consumer_id     string
+	activatedHeight uint64
+	consumerId      string
+}
+
+func NewWasmContractControllerByConfig(
+	ctx context.Context,
+	logger logging.Logger,
+	zapLogger *zap.Logger,
+	cfg *configs.OperatorConfig,
+) (*WasmContractController, error) {
+	// Create babylon client
+	bbnConfig := bbncfg.DefaultBabylonConfig()
+	bbnFgCfg := cfg.Babylon.FinalityGadget()
+	bbnConfig.RPCAddr = bbnFgCfg.BBNRPCAddress
+	bbnConfig.ChainID = bbnFgCfg.BBNChainID
+	babylonClient, err := bbnclient.New(
+		&bbnConfig,
+		zapLogger,
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create babylon client")
+	}
+
+	l2Client, err := l2eth.NewL2EthClient(ctx, &cfg.Layer2)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create l2 eth client")
+	}
+
+	btcPk, err := cfg.FinalityProvider.GetBtcPk()
+	if err != nil {
+		return nil, errors.Wrap(err, "get btc pk failed")
+	}
+
+	cp, err := finalityprovider.NewProvider(ctx, &cfg.FinalityProvider, zapLogger)
+	if err != nil {
+		return nil, errors.Wrap(err, "new provider failed")
+	}
+
+	key, err := cp.GetKeyAddressForKey(cfg.FinalityProvider.Cosmwasm.Key)
+	if err != nil {
+		return nil, errors.Wrapf(
+			err,
+			"failed to get key address for %v",
+			cfg.FinalityProvider.Cosmwasm.Key)
+	}
+
+	logger.Debug("key address", "name", cfg.FinalityProvider.Cosmwasm.Key, "address", key)
+
+	cwClient := cwclient.NewCosmWasmClient(
+		logger.With("module", "cosmWasmClient"),
+		babylonClient.QueryClient.RPCClient,
+		btcPk,
+		cfg.FinalityProvider.BtcPk,
+		cfg.FinalityProvider.FgContractAddress,
+		cfg.FinalityProvider.FpAddr,
+		cp)
+
+	return &WasmContractController{
+		logger:          logger.With("module", "WasmContractController"),
+		ctx:             ctx,
+		bbnClient:       babylonClient,
+		l2Client:        l2Client,
+		cwClient:        cwClient,
+		activatedHeight: cfg.Layer2.ActivatedHeight,
+		consumerId:      cfg.FinalityProvider.ConsumerId,
+	}, nil
+
 }
 
 func (wc *WasmContractController) Ctx() context.Context {
@@ -349,7 +418,7 @@ func (wc *WasmContractController) QueryBestBlock() (*types.BlockInfo, error) {
 // QueryActivatedHeight returns the activated height of the consumer chain
 // error will be returned if the consumer chain has not been activated
 func (wc *WasmContractController) QueryActivatedHeight() (uint64, error) {
-	return wc.ActivatedHeight, nil
+	return wc.activatedHeight, nil
 }
 
 func (wc *WasmContractController) Close() error {
