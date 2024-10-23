@@ -95,7 +95,7 @@ func (c *CosmWasmClient) CommitPublicRandomnessByPK(
 
 	return &fptypes.TxResponse{
 		TxHash: tx.TxHash,
-		Events: tx.Events,
+		//Events: tx.Events,
 	}, nil
 }
 
@@ -166,7 +166,7 @@ func (c *CosmWasmClient) SubmitFinalitySignatureByPK(
 
 	return &fptypes.TxResponse{
 		TxHash: tx.TxHash,
-		Events: tx.Events,
+		//Events: tx.Events,
 	}, nil
 }
 
@@ -237,6 +237,6 @@ func (c *CosmWasmClient) SubmitBatchFinalitySignatures(
 
 	return &fptypes.TxResponse{
 		TxHash: tx.TxHash,
-		Events: tx.Events,
+		//Events: tx.Events,
 	}, nil
 }

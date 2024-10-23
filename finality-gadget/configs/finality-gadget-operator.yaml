@@ -64,7 +64,7 @@ babylon:
   # The max number of retries to an RPC call in case of failure.
   maxretrytimes: 5
 
-finalityProviderHomePath: "/home/fy/fpd_home/"
+finalityProviderHomePath: "/home/fy/.fpd/"
 
 ###############################################################
 # The fp configs ##############################################

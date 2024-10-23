@@ -14,10 +14,8 @@ import (
 	bbn "github.com/babylonlabs-io/babylon/types"
 	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
 
-	"github.com/alt-research/blitz/finality-gadget/client/eotsmanager"
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
 	"github.com/alt-research/blitz/finality-gadget/core/utils"
-	"github.com/alt-research/blitz/finality-gadget/operator/clientcontroller"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
 	"github.com/alt-research/blitz/finality-gadget/operator/fp"
 )
@@ -46,12 +44,6 @@ func finalityProvider(cliCtx *cli.Context) error {
 		return err
 	}
 
-	em, err := eotsmanager.NewEOTSManagerClient(config.EOTSManagerConfig)
-	if err != nil {
-		log.Fatalf("NewEOTSManagerClient failed by %v", err)
-		return err
-	}
-
 	pk, err := config.FinalityProvider.GetBtcPk()
 	if err != nil {
 		log.Fatalf("GetBtcPk failed by %v", err)
@@ -61,18 +53,12 @@ func finalityProvider(cliCtx *cli.Context) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	cc, err := clientcontroller.NewWasmContractControllerByConfig(ctx, logger, logger.Inner(), &config)
-	if err != nil {
-		log.Fatalf("NewWasmContractControllerByConfig failed by %v", err)
-		return err
-	}
-
-	cp, err := fp.NewFinalityProviderManager(ctx, cfg, logger.Inner(), cc, em, dbBackend)
+	app, err := fp.NewFinalityProviderAppFromConfig(ctx, &config, cfg, dbBackend, logger.Inner())
 	if err != nil {
 		return errors.Wrap(err, "new provider failed")
 	}
 
-	err = cp.Start(ctx, bbn.NewBIP340PubKeyFromBTCPK(pk), "")
+	err = app.Start(ctx, bbn.NewBIP340PubKeyFromBTCPK(pk), "")
 	if err != nil {
 		return errors.Wrap(err, "StartFinalityProviderInstance failed")
 	}
