@@ -206,7 +206,7 @@ func (bbnClient *BabylonClient) isDelegationActive(
 	// the k-value check is added per
 	//
 	// So in our case, we need to check both to ensure the delegation is active
-	if uint32(btcHeight) < btcDel.StartHeight+kValue || uint32(btcHeight)+wValue > btcDel.EndHeight {
+	if btcHeight < btcDel.StartHeight+kValue || btcHeight+wValue > btcDel.EndHeight {
 		return false, nil
 	}
 

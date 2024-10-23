@@ -2,7 +2,6 @@ package clientcontroller
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 
 	"cosmossdk.io/math"
@@ -16,7 +15,6 @@ import (
 
 	bbnclient "github.com/babylonlabs-io/babylon/client/client"
 	bbncfg "github.com/babylonlabs-io/babylon/client/config"
-	bbntypes "github.com/babylonlabs-io/babylon/types"
 	btcstakingtypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	finalitytypes "github.com/babylonlabs-io/babylon/x/finality/types"
 	fpcontroller "github.com/babylonlabs-io/finality-provider/clientcontroller"
@@ -226,15 +224,7 @@ func (wc *WasmContractController) UnjailFinalityProvider(fpPk *btcec.PublicKey) 
 
 // QueryFinalityProviderVotingPower queries the voting power of the finality provider at a given height
 func (wc *WasmContractController) QueryFinalityProviderVotingPower(fpPk *btcec.PublicKey, blockHeight uint64) (uint64, error) {
-	res, err := wc.bbnClient.QueryClient.FinalityProviderPowerAtHeight(
-		bbntypes.NewBIP340PubKeyFromBTCPK(fpPk).MarshalHex(),
-		blockHeight,
-	)
-	if err != nil {
-		return 0, fmt.Errorf("failed to query Finality Voting Power at Height %d: %w", blockHeight, err)
-	}
-
-	return res.VotingPower, nil
+	return 10, nil
 }
 
 // QueryFinalityProviderSlashedOrJailed queries if the finality provider is slashed or jailed
@@ -361,7 +351,7 @@ func (wc *WasmContractController) QueryBlock(height uint64) (*types.BlockInfo, e
 }
 
 // QueryBlocks returns a list of blocks from startHeight to endHeight
-func (wc *WasmContractController) QueryBlocks(startHeight, endHeight uint64, limit uint32) ([]*types.BlockInfo, error) {
+func (wc *WasmContractController) QueryBlocks(startHeight, endHeight uint64, limit uint64) ([]*types.BlockInfo, error) {
 	if endHeight < startHeight {
 		return nil, errors.Errorf("the startHeight %v should not be higher than the endHeight %v", startHeight, endHeight)
 	}

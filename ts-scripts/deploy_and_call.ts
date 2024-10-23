@@ -44,7 +44,7 @@ async function main(hackatomWasmPath: string) {
   // This contract specific message is passed to the contract
   const msg = {
     admin: alice.address0,
-    consumer_id: "orbit-stack-l2",
+    consumer_id: "test1",
     activated_height: 1,
     is_enabled: true
   };
