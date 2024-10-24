@@ -21,7 +21,7 @@ layer2:
   chain_id: 412346
 
   # the activated_height number for layer2
-  activated_height: 32
+  activated_height: 0
 
 ###############################################################
 # The babylon configs ######################################
@@ -31,7 +31,7 @@ babylon:
     # rpc host address of the L2 node
     l2rpchost: "http://10.1.1.39:8547"
     # the nitro finality gadget contract address in babylon chain
-    fgcontractaddress: "bbn1nc5tatafv6eyq7llkr2gv50ff9e22mnf70qgjlv737ktmt4eswrqztltxv"
+    fgcontractaddress: "bbn1ghd753shjuwexxywmgs4xz7x2q732vcnkm6h2pyv9s6ah3hylvrqxxvh0f"
     # host:port to listen for gRPC connections
     grpclistener: "0.0.0.0:50051"
     # host:port to listen for HTTP connections
@@ -39,7 +39,7 @@ babylon:
     # the chain id of babylon chain
     bbnchainid: "my-testnet-01"
     # the rpc address url for babylon chain
-    bbnrpcaddress: "http://10.1.1.39:26657"
+    bbnrpcaddress: "http://10.1.1.49:26657"
     # The daemon's rpc listening address.
     bitcoinrpchost: "10.1.1.120:18443"
     # Username for RPC connections.
@@ -80,16 +80,16 @@ finalityProvider:
   # btc_pk is the BTC secp256k1 PK of the finality provider encoded in BIP-340 spec
   btc_pk: "0x28252efa5097e0b007dca2d11308c5670e6e822ba39d8dd0ab0c88111ec2b7e3"
   # BabylonChain op finality gadget contract address
-  fg_contract_address: "bbn1nc5tatafv6eyq7llkr2gv50ff9e22mnf70qgjlv737ktmt4eswrqztltxv"
+  fg_contract_address: "bbn1ghd753shjuwexxywmgs4xz7x2q732vcnkm6h2pyv9s6ah3hylvrqxxvh0f"
   # BabylonChain chain ID
   bbn_chain_id: "my-testnet-01"
   # BabylonChain chain RPC address
-  bbn_rpc_address: "http://10.1.1.39:26657"
+  bbn_rpc_address: "http://10.1.1.49:26657"
   cosmwasm:
     key: "fp"
     chain_id: "my-testnet-01"
-    rpc_addr: "http://10.1.1.39:26657"
-    grpc_addr: "http://10.1.1.39:9090"
+    rpc_addr: "http://10.1.1.49:26657"
+    grpc_addr: "http://10.1.1.49:9090"
     account_prefix: "bbn"
     keyring_backend: "test"
     gas_adjustment: 1.5

@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/babylonlabs-io/finality-provider/clientcontroller/api"
 	"github.com/babylonlabs-io/finality-provider/clientcontroller/cosmwasm"
+	cwcclient "github.com/babylonlabs-io/finality-provider/cosmwasmclient/client"
 	cosmwasmcfg "github.com/babylonlabs-io/finality-provider/cosmwasmclient/config"
 	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
 	"github.com/babylonlabs-io/finality-provider/types"
@@ -27,8 +29,10 @@ type CosmwasmConsumerController struct {
 	cfg    *fpcfg.CosmwasmConfig
 	logger *zap.Logger
 
-	ctx      context.Context
-	l2Client *l2eth.L2EthClient
+	ctx          context.Context
+	cwClient     *cwcclient.Client
+	l2Client     *l2eth.L2EthClient
+	activeHeight uint64
 }
 
 func NewCosmwasmConsumerController(
@@ -42,17 +46,29 @@ func NewCosmwasmConsumerController(
 		return nil, errors.Wrap(err, "inner NewCosmwasmConsumerController failed")
 	}
 
+	wc, err := cwcclient.New(
+		fpConfig.CosmwasmConfig.ToQueryClientConfig(),
+		"wasmd",
+		wasmEncodingCfg,
+		zapLogger,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Wasmd client: %w", err)
+	}
+
 	l2Client, err := l2eth.NewL2EthClient(ctx, &cfg.Layer2)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create l2 eth client")
 	}
 
 	return &CosmwasmConsumerController{
-		inner:    inner,
-		cfg:      fpConfig.CosmwasmConfig,
-		logger:   zapLogger,
-		ctx:      ctx,
-		l2Client: l2Client,
+		inner:        inner,
+		cfg:          fpConfig.CosmwasmConfig,
+		logger:       zapLogger,
+		ctx:          ctx,
+		cwClient:     wc,
+		l2Client:     l2Client,
+		activeHeight: cfg.Layer2.ActivatedHeight,
 	}, nil
 }
 
@@ -68,17 +84,8 @@ func (wc *CosmwasmConsumerController) CommitPubRandList(
 	numPubRand uint64,
 	commitment []byte,
 	sig *schnorr.Signature) (*types.TxResponse, error) {
+	wc.logger.Sugar().Debugf("CommitPubRandList %v", startHeight)
 	return wc.inner.CommitPubRandList(fpPk, startHeight, numPubRand, commitment, sig)
-}
-
-// SubmitFinalitySig submits the finality signature to the consumer chain
-func (wc *CosmwasmConsumerController) SubmitFinalitySig(
-	fpPk *btcec.PublicKey,
-	block *types.BlockInfo,
-	pubRand *btcec.FieldVal,
-	proof []byte,
-	sig *btcec.ModNScalar) (*types.TxResponse, error) {
-	return wc.inner.SubmitFinalitySig(fpPk, block, pubRand, proof, sig)
 }
 
 // SubmitBatchFinalitySigs submits a batch of finality signatures to the consumer chain
@@ -88,14 +95,20 @@ func (wc *CosmwasmConsumerController) SubmitBatchFinalitySigs(
 	pubRandList []*btcec.FieldVal,
 	proofList [][]byte,
 	sigs []*btcec.ModNScalar) (*types.TxResponse, error) {
-	return wc.inner.SubmitBatchFinalitySigs(fpPk, blocks, pubRandList, proofList, sigs)
+	wc.logger.Sugar().Debugf("SubmitBatchFinalitySigs %v", blocks)
+	tx, err := wc.submitBatchFinalitySigs(fpPk, blocks, pubRandList, proofList, sigs)
+	if err != nil {
+		wc.logger.Sugar().Errorf("SubmitFinalitySig %v failed: %v", blocks, err)
+	}
+	return tx, err
 }
 
 // Note: the following queries are only for PoC
 
 // QueryFinalityProviderHasPower queries whether the finality provider has voting power at a given height
 func (wc *CosmwasmConsumerController) QueryFinalityProviderHasPower(fpPk *btcec.PublicKey, blockHeight uint64) (bool, error) {
-	return wc.inner.QueryFinalityProviderHasPower(fpPk, blockHeight)
+	//return wc.inner.QueryFinalityProviderHasPower(fpPk, blockHeight)
+	return true, nil
 }
 
 // QueryLatestFinalizedBlock returns the latest finalized block
@@ -106,7 +119,11 @@ func (wc *CosmwasmConsumerController) QueryLatestFinalizedBlock() (*types.BlockI
 
 // QueryLastPublicRandCommit returns the last committed public randomness
 func (wc *CosmwasmConsumerController) QueryLastPublicRandCommit(fpPk *btcec.PublicKey) (*types.PubRandCommit, error) {
-	return wc.inner.QueryLastPublicRandCommit(fpPk)
+	res, err := wc.inner.QueryLastPublicRandCommit(fpPk)
+
+	wc.logger.Sugar().Debugf("QueryLastPublicRandCommit res %v", res)
+
+	return res, err
 }
 
 // QueryBlock queries the block at the given height
@@ -182,7 +199,7 @@ func (wc *CosmwasmConsumerController) QueryLatestBlockHeight() (uint64, error) {
 // QueryActivatedHeight returns the activated height of the consumer chain
 // error will be returned if the consumer chain has not been activated
 func (wc *CosmwasmConsumerController) QueryActivatedHeight() (uint64, error) {
-	return wc.inner.QueryActivatedHeight()
+	return wc.activeHeight, nil
 }
 
 func (wc *CosmwasmConsumerController) Close() error {

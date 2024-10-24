@@ -35,7 +35,7 @@ func NewFinalityProviderAppFromConfig(
 	logger *zap.Logger,
 ) (*FinalityProviderApp, error) {
 
-	em, err := eotsmanager.NewEOTSManagerClient(cfg.EOTSManagerConfig)
+	em, err := eotsmanager.NewEOTSManagerClient(logger, cfg.EOTSManagerConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewEOTSManagerClient failed")
 	}
@@ -80,14 +80,9 @@ func (app *FinalityProviderApp) Start(ctx context.Context, fpPk *bbntypes.BIP340
 		return errors.Wrap(err, "start failed")
 	}
 
-	//err = app.inner.StartHandlingFinalityProvider(fpPk, passphrase)
-	//if err != nil {
-	//	return errors.Wrap(err, "StartHandlingFinalityProvider failed")
-	//}
-
-	err = app.inner.StartHandlingAll()
+	err = app.inner.StartHandlingFinalityProvider(fpPk, passphrase)
 	if err != nil {
-		return errors.Wrap(err, "StartHandlingAll failed")
+		return errors.Wrap(err, "StartHandlingFinalityProvider failed")
 	}
 
 	for {

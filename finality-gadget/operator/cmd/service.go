@@ -33,6 +33,8 @@ func finalityProvider(cliCtx *cli.Context) error {
 		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
+	cfg.NumPubRand = 1
+
 	dbBackend, err := cfg.DatabaseConfig.GetDbBackend()
 	if err != nil {
 		return fmt.Errorf("failed to create db backend: %w", err)
@@ -53,7 +55,15 @@ func finalityProvider(cliCtx *cli.Context) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	app, err := fp.NewFinalityProviderAppFromConfig(ctx, &config, cfg, dbBackend, logger.Inner())
+	zaplogger, err := logging.NewZapLoggerInner(logging.NewLogLevel(config.Common.Production))
+	if err != nil {
+		log.Fatalf("new logger failed by %v", err)
+		return err
+	}
+
+	logger.Info("NewFinalityProviderAppFromConfig")
+
+	app, err := fp.NewFinalityProviderAppFromConfig(ctx, &config, cfg, dbBackend, zaplogger)
 	if err != nil {
 		return errors.Wrap(err, "new provider failed")
 	}
