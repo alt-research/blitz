@@ -7,13 +7,15 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
 var _ fpeotsmanager.EOTSManager = &EOTSManagerClient{}
 
 type EOTSManagerClient struct {
-	inner fpeotsmanager.EOTSManager
-	cfg   Config
+	inner  fpeotsmanager.EOTSManager
+	cfg    Config
+	logger *zap.Logger
 }
 
 type Config struct {
@@ -21,16 +23,21 @@ type Config struct {
 	RemoteAddr string `yaml:"remote_address"`
 }
 
+func (c *Config) WithEnv() {
+	// TODO
+}
+
 // Create eots manager client
-func NewEOTSManagerClient(cfg Config) (*EOTSManagerClient, error) {
+func NewEOTSManagerClient(logger *zap.Logger, cfg Config) (*EOTSManagerClient, error) {
 	cli, err := client.NewEOTSManagerGRpcClient(cfg.RemoteAddr)
 	if err != nil {
 		return nil, errors.Wrapf(err, "create eotsmanager client failed: %v", cfg.RemoteAddr)
 	}
 
 	return &EOTSManagerClient{
-		inner: cli,
-		cfg:   cfg,
+		inner:  cli,
+		cfg:    cfg,
+		logger: logger,
 	}, nil
 }
 
@@ -48,7 +55,10 @@ func (e *EOTSManagerClient) CreateKey(name, passphrase, hdPath string) ([]byte, 
 // NOTE: the randomness is deterministically generated based on the EOTS key, chainID and
 // block height
 func (e *EOTSManagerClient) CreateRandomnessPairList(uid []byte, chainID []byte, startHeight uint64, num uint32, passphrase string) ([]*btcec.FieldVal, error) {
-	return e.inner.CreateRandomnessPairList(uid, chainID, startHeight, num, passphrase)
+	res, err := e.inner.CreateRandomnessPairList(uid, chainID, startHeight, num, passphrase)
+	e.logger.Sugar().Debugf("CreateRandomnessPairList %v %v", startHeight, res)
+
+	return res, err
 }
 
 // KeyRecord returns the finality provider record

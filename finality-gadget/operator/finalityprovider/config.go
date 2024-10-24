@@ -32,6 +32,8 @@ type Config struct {
 	BbnRpcAddress string `yaml:"bbn_rpc_address,omitempty"`
 	// The cosmwasm config
 	Cosmwasm CosmwasmConfig `yaml:"cosmwasm,omitempty"`
+	// the consumer id
+	ConsumerId string `yaml:"consumer_id,omitempty"`
 }
 
 func (c *Config) WithEnv() {

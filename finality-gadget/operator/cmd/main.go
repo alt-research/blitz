@@ -44,6 +44,12 @@ func main() {
 				},
 			},
 		},
+		{
+			Name:    "service",
+			Aliases: []string{"s"},
+			Usage:   "boot fp service",
+			Action:  finalityProvider,
+		},
 	}
 	err := app.Run(os.Args)
 	if err != nil {

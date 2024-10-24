@@ -6,10 +6,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/pkg/errors"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcec/v2/schnorr"
 	rpcclient "github.com/cometbft/cometbft/rpc/client"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/relayer/v2/relayer/chains/cosmos"
@@ -84,4 +86,10 @@ func (cwClient *CosmWasmClient) querySmartContractState(
 	}
 
 	return nil
+}
+
+func BtcPkToHex(pk *btcec.PublicKey) string {
+	btcPkBytes := schnorr.SerializePubKey(pk)
+
+	return hexutil.Encode(btcPkBytes)
 }
