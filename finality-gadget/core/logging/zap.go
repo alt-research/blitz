@@ -51,6 +51,28 @@ func NewZapLogger(env LogLevel) (*ZapLogger, error) {
 	}, nil
 }
 
+func NewZapLoggerInner(env LogLevel) (*zap.Logger, error) {
+	config := zap.NewProductionConfig()
+	if env == Development {
+		config = zap.NewDevelopmentConfig()
+	}
+
+	config.DisableStacktrace = true
+	config.Encoding = "console"
+	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	config.EncoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+
+	if env == Development {
+		config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	}
+
+	logger, err := config.Build()
+	if err != nil {
+		panic(err)
+	}
+	return logger, nil
+}
+
 func (z *ZapLogger) Inner() *zap.Logger {
 	return z.logger
 }
