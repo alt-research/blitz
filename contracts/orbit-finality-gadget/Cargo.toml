@@ -1,0 +1,66 @@
+[package]
+name = "orbig-finality-gadget"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors = ["Babylon Labs Ltd. <admin@babylonlabs.io>", "Mauro Lacy <mauro@babylonlabs.io>"]
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[package.metadata.optimizer]
+default-build = true
+builds = [
+  { name = "full-validation", features = [
+    "full-validation",
+  ], default-features = false }
+]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+doctest = false
+
+[[bin]]
+name = "btcstaking-schema"
+path = "src/bin/schema.rs"
+test = false
+
+[features]
+# Add feature "cranelift" to default if you need 32 bit or ARM support
+default = []
+# Use cranelift backend instead of singlepass. This is required for development on 32 bit or ARM machines.
+cranelift = ["cosmwasm-vm/cranelift"]
+# for quicker tests, cargo test --lib
+library = []
+# feature for enabling the full validation
+full-validation = []
+
+[dependencies]
+babylon-apis          = { workspace = true }
+babylon-bindings      = { workspace = true }
+babylon-contract      = { workspace = true, features = [ "library" ] }
+babylon-merkle        = { workspace = true }
+babylon-proto         = { workspace = true }
+babylon-btcstaking    = { workspace = true }
+babylon-bitcoin       = { workspace = true }
+eots                  = { workspace = true }
+
+bitcoin          = { workspace = true }
+cosmwasm-schema  = { workspace = true }
+cosmwasm-std     = { workspace = true }
+cw2              = { workspace = true }
+cw-storage-plus  = { workspace = true }
+cw-utils         = { workspace = true }
+derivative       = { workspace = true }
+hex              = { workspace = true }
+k256             = { workspace = true } 
+prost            = { workspace = true }
+thiserror        = { workspace = true }
+cw-controllers   = { workspace = true }
+
+[dev-dependencies]
+test-utils        = { workspace = true }
+babylon-proto     = { workspace = true }
+cosmwasm-vm       = { workspace = true }
+prost             = { workspace = true }

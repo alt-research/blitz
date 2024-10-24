@@ -24,14 +24,15 @@ integration     = "./scripts/integration_test.sh"
 [workspace.dependencies]
 anybuf = { version = "0.5.0" }
 
-babylon-merkle = { git = "https://github.com/babylonlabs-io/babylon-contract", branch = "main" }
-babylon-apis = { git = "https://github.com/babylonlabs-io/babylon-contract", branch = "main" }
-babylon-proto = { git = "https://github.com/babylonlabs-io/babylon-contract", branch = "main" }
-babylon-bitcoin = { git = "https://github.com/babylonlabs-io/babylon-contract", branch = "main" }
-babylon-btcstaking = { git = "https://github.com/babylonlabs-io/babylon-contract", branch = "main" }
-babylon-contract = { git = "https://github.com/babylonlabs-io/babylon-contract", branch = "main" }
-eots = { git = "https://github.com/babylonlabs-io/babylon-contract", branch = "main" }
-test-utils = { git = "https://github.com/babylonlabs-io/babylon-contract", branch = "main" }
+babylon-merkle = { git = "https://github.com/fyInALT/babylon-contract", branch = "blitz" }
+babylon-apis = { git = "https://github.com/fyInALT/babylon-contract", branch = "blitz" }
+babylon-proto = { git = "https://github.com/fyInALT/babylon-contract", branch = "blitz" }
+babylon-bitcoin = { git = "https://github.com/fyInALT/babylon-contract", branch = "blitz" }
+babylon-bindings = { git = "https://github.com/fyInALT/babylon-contract", branch = "blitz" }
+babylon-btcstaking = { git = "https://github.com/fyInALT/babylon-contract", branch = "blitz" }
+babylon-contract = { git = "https://github.com/fyInALT/babylon-contract", branch = "blitz" }
+eots = { git = "https://github.com/fyInALT/babylon-contract", branch = "blitz" }
+test-utils = { git = "https://github.com/fyInALT/babylon-contract", branch = "blitz" }
 
 anyhow = "1.0.82"
 bitcoin = "0.31.1"
