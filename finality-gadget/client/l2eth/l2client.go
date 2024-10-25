@@ -22,6 +22,8 @@ type Config struct {
 	ChainId uint64 `yaml:"chain_id"`
 	// The activated_height
 	ActivatedHeight uint64 `yaml:"activated_height"`
+	// Back heights, will start service by this height
+	BackHeightCount uint64 `yaml:"back_height_count"`
 }
 
 // use the env config first for some keys

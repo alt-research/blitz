@@ -45,9 +45,12 @@ func NewFinalityProviderAppFromConfig(
 		return nil, errors.Wrap(err, "NewBabylonController failed")
 	}
 
-	consumerCon, err := controllers.NewCosmwasmConsumerController(
+	consumerCon, err := controllers.NewOrbitConsumerController(
 		ctx, cfg, fpConfig, logger,
 	)
+	if err != nil {
+		return nil, errors.Wrap(err, "NewOrbitConsumerController failed")
+	}
 
 	return NewFinalityProviderApp(
 		fpConfig, cc, consumerCon, em, db, logger,

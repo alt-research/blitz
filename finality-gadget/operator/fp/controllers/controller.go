@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -11,49 +10,43 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	"github.com/babylonlabs-io/finality-gadget/db"
 	"github.com/babylonlabs-io/finality-provider/clientcontroller/api"
-	"github.com/babylonlabs-io/finality-provider/clientcontroller/cosmwasm"
+	"github.com/babylonlabs-io/finality-provider/clientcontroller/opstackl2"
 	cwcclient "github.com/babylonlabs-io/finality-provider/cosmwasmclient/client"
-	cosmwasmcfg "github.com/babylonlabs-io/finality-provider/cosmwasmclient/config"
 	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
 	"github.com/babylonlabs-io/finality-provider/types"
 
 	"github.com/alt-research/blitz/finality-gadget/client/l2eth"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
+	sdkClient "github.com/alt-research/blitz/finality-gadget/sdk/client"
 )
 
-var _ api.ConsumerController = &CosmwasmConsumerController{}
+var _ api.ConsumerController = &OrbitConsumerController{}
 
-type CosmwasmConsumerController struct {
-	inner  *cosmwasm.CosmwasmConsumerController
-	cfg    *fpcfg.CosmwasmConfig
+type OrbitConsumerController struct {
+	inner  *opstackl2.OPStackL2ConsumerController
+	cfg    *fpcfg.OPStackL2Config
 	logger *zap.Logger
 
-	ctx          context.Context
-	cwClient     *cwcclient.Client
-	l2Client     *l2eth.L2EthClient
-	activeHeight uint64
+	ctx                  context.Context
+	finalityGadgetClient sdkClient.IFinalityGadget
+	cwClient             *cwcclient.Client
+	l2Client             *l2eth.L2EthClient
+
+	activeHeight    uint64
+	backHeightCount uint64
 }
 
-func NewCosmwasmConsumerController(
+func NewOrbitConsumerController(
 	ctx context.Context,
 	cfg *configs.OperatorConfig,
 	fpConfig *fpcfg.Config,
-	zapLogger *zap.Logger) (*CosmwasmConsumerController, error) {
-	wasmEncodingCfg := cosmwasmcfg.GetWasmdEncodingConfig()
-	inner, err := cosmwasm.NewCosmwasmConsumerController(fpConfig.CosmwasmConfig, wasmEncodingCfg, zapLogger)
+	zapLogger *zap.Logger,
+) (*OrbitConsumerController, error) {
+	inner, err := opstackl2.NewOPStackL2ConsumerController(fpConfig.OPStackL2Config, zapLogger)
 	if err != nil {
-		return nil, errors.Wrap(err, "inner NewCosmwasmConsumerController failed")
-	}
-
-	wc, err := cwcclient.New(
-		fpConfig.CosmwasmConfig.ToQueryClientConfig(),
-		"wasmd",
-		wasmEncodingCfg,
-		zapLogger,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Wasmd client: %w", err)
+		return nil, errors.Wrap(err, "inner NewOrbitConsumerController failed")
 	}
 
 	l2Client, err := l2eth.NewL2EthClient(ctx, &cfg.Layer2)
@@ -61,24 +54,46 @@ func NewCosmwasmConsumerController(
 		return nil, errors.Wrap(err, "failed to create l2 eth client")
 	}
 
-	return &CosmwasmConsumerController{
-		inner:        inner,
-		cfg:          fpConfig.CosmwasmConfig,
-		logger:       zapLogger,
-		ctx:          ctx,
-		cwClient:     wc,
-		l2Client:     l2Client,
-		activeHeight: cfg.Layer2.ActivatedHeight,
+	// Init local DB for storing and querying blocks
+	db, err := db.NewBBoltHandler(cfg.Babylon.FinalityGadget().DBFilePath, zapLogger)
+	if err != nil {
+		return nil, errors.Errorf("failed to create DB handler: %w", err)
+	}
+	defer db.Close()
+	err = db.CreateInitialSchema()
+	if err != nil {
+		return nil, errors.Errorf("create initial buckets error: %w", err)
+	}
+
+	finalityGadgetClient, err := sdkClient.NewFinalityGadget(
+		cfg.Babylon.FinalityGadget(),
+		db,
+		zapLogger,
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create babylon client")
+	}
+
+	return &OrbitConsumerController{
+		inner:                inner,
+		cfg:                  fpConfig.OPStackL2Config,
+		logger:               zapLogger,
+		ctx:                  ctx,
+		cwClient:             inner.CwClient,
+		finalityGadgetClient: finalityGadgetClient,
+		l2Client:             l2Client,
+		activeHeight:         cfg.Layer2.ActivatedHeight,
+		backHeightCount:      cfg.Layer2.BackHeightCount,
 	}, nil
 }
 
-func (wc *CosmwasmConsumerController) Ctx() context.Context {
+func (wc *OrbitConsumerController) Ctx() context.Context {
 	return wc.ctx
 }
 
 // CommitPubRandList commits a list of EOTS public randomness the consumer chain
 // it returns tx hash and error
-func (wc *CosmwasmConsumerController) CommitPubRandList(
+func (wc *OrbitConsumerController) CommitPubRandList(
 	fpPk *btcec.PublicKey,
 	startHeight uint64,
 	numPubRand uint64,
@@ -89,7 +104,7 @@ func (wc *CosmwasmConsumerController) CommitPubRandList(
 }
 
 // SubmitBatchFinalitySigs submits a batch of finality signatures to the consumer chain
-func (wc *CosmwasmConsumerController) SubmitBatchFinalitySigs(
+func (wc *OrbitConsumerController) SubmitBatchFinalitySigs(
 	fpPk *btcec.PublicKey,
 	blocks []*types.BlockInfo,
 	pubRandList []*btcec.FieldVal,
@@ -106,19 +121,30 @@ func (wc *CosmwasmConsumerController) SubmitBatchFinalitySigs(
 // Note: the following queries are only for PoC
 
 // QueryFinalityProviderHasPower queries whether the finality provider has voting power at a given height
-func (wc *CosmwasmConsumerController) QueryFinalityProviderHasPower(fpPk *btcec.PublicKey, blockHeight uint64) (bool, error) {
+func (wc *OrbitConsumerController) QueryFinalityProviderHasPower(fpPk *btcec.PublicKey, blockHeight uint64) (bool, error) {
 	//return wc.inner.QueryFinalityProviderHasPower(fpPk, blockHeight)
 	return true, nil
 }
 
 // QueryLatestFinalizedBlock returns the latest finalized block
 // Note: nil will be returned if the finalized block does not exist
-func (wc *CosmwasmConsumerController) QueryLatestFinalizedBlock() (*types.BlockInfo, error) {
-	return wc.inner.QueryLatestFinalizedBlock()
+func (wc *OrbitConsumerController) QueryLatestFinalizedBlock() (*types.BlockInfo, error) {
+	logger := wc.logger.Sugar()
+	logger.Debugf("QueryLatestFinalizedBlock")
+
+	res, err := wc.queryBlock(rpc.BlockNumberOrHashWithNumber(rpc.FinalizedBlockNumber))
+
+	if err != nil {
+		logger.Errorf("QueryLatestFinalizedBlock failed by %v", err)
+	} else {
+		logger.Debugf("QueryLatestFinalizedBlock res %v", res)
+	}
+
+	return res, err
 }
 
 // QueryLastPublicRandCommit returns the last committed public randomness
-func (wc *CosmwasmConsumerController) QueryLastPublicRandCommit(fpPk *btcec.PublicKey) (*types.PubRandCommit, error) {
+func (wc *OrbitConsumerController) QueryLastPublicRandCommit(fpPk *btcec.PublicKey) (*types.PubRandCommit, error) {
 	res, err := wc.inner.QueryLastPublicRandCommit(fpPk)
 
 	wc.logger.Sugar().Debugf("QueryLastPublicRandCommit res %v", res)
@@ -127,7 +153,7 @@ func (wc *CosmwasmConsumerController) QueryLastPublicRandCommit(fpPk *btcec.Publ
 }
 
 // QueryBlock queries the block at the given height
-func (wc *CosmwasmConsumerController) QueryBlock(height uint64) (*types.BlockInfo, error) {
+func (wc *OrbitConsumerController) QueryBlock(height uint64) (*types.BlockInfo, error) {
 	res, err := wc.QueryBlocks(height, height, 1)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to query block by %v", height)
@@ -141,12 +167,12 @@ func (wc *CosmwasmConsumerController) QueryBlock(height uint64) (*types.BlockInf
 }
 
 // QueryIsBlockFinalized queries if the block at the given height is finalized
-func (wc *CosmwasmConsumerController) QueryIsBlockFinalized(height uint64) (bool, error) {
+func (wc *OrbitConsumerController) QueryIsBlockFinalized(height uint64) (bool, error) {
 	return wc.inner.QueryIsBlockFinalized(height)
 }
 
 // QueryBlocks returns a list of blocks from startHeight to endHeight
-func (wc *CosmwasmConsumerController) QueryBlocks(startHeight, endHeight, limit uint64) ([]*types.BlockInfo, error) {
+func (wc *OrbitConsumerController) QueryBlocks(startHeight, endHeight, limit uint64) ([]*types.BlockInfo, error) {
 	if endHeight < startHeight {
 		return nil, errors.Errorf("the startHeight %v should not be higher than the endHeight %v", startHeight, endHeight)
 	}
@@ -180,28 +206,33 @@ func (wc *CosmwasmConsumerController) QueryBlocks(startHeight, endHeight, limit 
 }
 
 // QueryLatestBlockHeight queries the tip block height of the consumer chain
-func (wc *CosmwasmConsumerController) QueryLatestBlockHeight() (uint64, error) {
-	safe, err := wc.l2Client.BlockReceipts(wc.Ctx(), rpc.BlockNumberOrHashWithNumber(rpc.SafeBlockNumber))
+func (wc *OrbitConsumerController) QueryLatestBlockHeight() (uint64, error) {
+	logger := wc.logger.Sugar()
+	logger.Debugf("QueryLatestBlockHeight")
+
+	res, err := wc.queryBlock(rpc.BlockNumberOrHashWithNumber(rpc.SafeBlockNumber))
+	height := res.Height
+	if height <= wc.backHeightCount {
+		height = 1
+	} else {
+		height = height - wc.backHeightCount
+	}
+
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to QueryBestBlock by get SafeBlockNumber BlockReceipts")
+		logger.Errorf("QueryLatestBlockHeight failed by %v", err)
+	} else {
+		logger.Debugf("QueryLatestBlockHeight res %v", height)
 	}
 
-	if len(safe) == 0 {
-		wc.logger.Warn("get QueryBestblock by get SafeBlockNumber no returns")
-		return 0, nil
-	}
-
-	safeBlock := safe[0]
-
-	return safeBlock.BlockNumber.Uint64(), nil
+	return height, err
 }
 
 // QueryActivatedHeight returns the activated height of the consumer chain
 // error will be returned if the consumer chain has not been activated
-func (wc *CosmwasmConsumerController) QueryActivatedHeight() (uint64, error) {
+func (wc *OrbitConsumerController) QueryActivatedHeight() (uint64, error) {
 	return wc.activeHeight, nil
 }
 
-func (wc *CosmwasmConsumerController) Close() error {
+func (wc *OrbitConsumerController) Close() error {
 	return wc.inner.Close()
 }

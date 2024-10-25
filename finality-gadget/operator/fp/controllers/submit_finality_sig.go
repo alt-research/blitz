@@ -6,6 +6,7 @@ import (
 
 	sdkErr "cosmossdk.io/errors"
 	wasmdtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	bbntypes "github.com/babylonlabs-io/babylon/types"
 	"github.com/babylonlabs-io/finality-provider/types"
 	fptypes "github.com/babylonlabs-io/finality-provider/types"
@@ -44,7 +45,7 @@ type ExecMsg struct {
 }
 
 // SubmitFinalitySig submits the finality signature to the consumer chain
-func (wc *CosmwasmConsumerController) SubmitFinalitySig(
+func (wc *OrbitConsumerController) SubmitFinalitySig(
 	fpPk *btcec.PublicKey,
 	block *types.BlockInfo,
 	pubRand *btcec.FieldVal,
@@ -80,14 +81,20 @@ func (wc *CosmwasmConsumerController) SubmitFinalitySig(
 		},
 	}
 
-	msgBytes, err := json.Marshal(msg)
+	payload, err := json.Marshal(msg)
 	if err != nil {
 		return nil, err
 	}
 
-	wc.logger.Sugar().Debugf("submitFinalitySignature %v", string(msgBytes))
+	wc.logger.Sugar().Debugf("submitFinalitySignature %v", string(payload))
 
-	res, err := wc.inner.ExecuteContract(msgBytes)
+	execMsg := &wasmtypes.MsgExecuteContract{
+		Sender:   wc.inner.CwClient.MustGetAddr(),
+		Contract: wc.cfg.OPFinalityGadgetAddress,
+		Msg:      payload,
+	}
+
+	res, err := wc.inner.ReliablySendMsg(execMsg, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +108,7 @@ func (wc *CosmwasmConsumerController) SubmitFinalitySig(
 }
 
 // SubmitBatchFinalitySigs submits a batch of finality signatures to Babylon
-func (wc *CosmwasmConsumerController) submitBatchFinalitySigs(
+func (wc *OrbitConsumerController) submitBatchFinalitySigs(
 	fpPk *btcec.PublicKey,
 	blocks []*fptypes.BlockInfo,
 	pubRandList []*btcec.FieldVal,
@@ -144,8 +151,8 @@ func (wc *CosmwasmConsumerController) submitBatchFinalitySigs(
 		}
 
 		execMsg := &wasmdtypes.MsgExecuteContract{
-			Sender:   wc.inner.MustGetValidatorAddress(),
-			Contract: sdk.MustAccAddressFromBech32(wc.cfg.BtcStakingContractAddress).String(),
+			Sender:   wc.inner.CwClient.MustGetAddr(),
+			Contract: sdk.MustAccAddressFromBech32(wc.cfg.OPFinalityGadgetAddress).String(),
 			Msg:      msgBytes,
 		}
 		msgs = append(msgs, execMsg)
@@ -159,7 +166,7 @@ func (wc *CosmwasmConsumerController) submitBatchFinalitySigs(
 	return &fptypes.TxResponse{TxHash: res.TxHash}, nil
 }
 
-func (wc *CosmwasmConsumerController) reliablySendMsgs(msgs []sdk.Msg, expectedErrs []*sdkErr.Error, unrecoverableErrs []*sdkErr.Error) (*provider.RelayerTxResponse, error) {
+func (wc *OrbitConsumerController) reliablySendMsgs(msgs []sdk.Msg, expectedErrs []*sdkErr.Error, unrecoverableErrs []*sdkErr.Error) (*provider.RelayerTxResponse, error) {
 	return wc.cwClient.ReliablySendMsgs(
 		context.Background(),
 		msgs,
