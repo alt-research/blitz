@@ -17,7 +17,7 @@ import (
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
 	"github.com/alt-research/blitz/finality-gadget/core/utils"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
-	"github.com/alt-research/blitz/finality-gadget/operator/fp"
+	"github.com/alt-research/blitz/finality-gadget/operator/finalityprovider"
 )
 
 func finalityProvider(cliCtx *cli.Context) error {
@@ -63,7 +63,7 @@ func finalityProvider(cliCtx *cli.Context) error {
 
 	logger.Info("NewFinalityProviderAppFromConfig")
 
-	app, err := fp.NewFinalityProviderAppFromConfig(ctx, &config, cfg, dbBackend, zaplogger)
+	app, err := finalityprovider.NewFinalityProviderAppFromConfig(ctx, &config, cfg, dbBackend, zaplogger)
 	if err != nil {
 		return errors.Wrap(err, "new provider failed")
 	}
