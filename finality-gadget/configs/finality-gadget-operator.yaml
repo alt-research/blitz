@@ -66,42 +66,11 @@ babylon:
 
 finalityProviderHomePath: "/home/fy/.fpd/"
 
-###############################################################
-# The fp configs ##############################################
-###############################################################
-finalityProvider:
-  # The number of Schnorr public randomness for each commitment
-  num_pub_rand: 3
-  # The upper bound of the number of Schnorr public randomness for each commitment
-  num_pub_rand_max: 8
-  minrandheightgap: 35000
-  # fp_addr is the bech32 chain address identifier of the finality provider.
-  fp_addr: "bbn1tvt7058xrce9r3helj9ym0xa08jvaedd543pdm"
-  # btc_pk is the BTC secp256k1 PK of the finality provider encoded in BIP-340 spec
-  btc_pk: "0x28252efa5097e0b007dca2d11308c5670e6e822ba39d8dd0ab0c88111ec2b7e3"
-  # BabylonChain op finality gadget contract address
-  fg_contract_address: "bbn1ghd753shjuwexxywmgs4xz7x2q732vcnkm6h2pyv9s6ah3hylvrqxxvh0f"
-  # BabylonChain chain ID
-  bbn_chain_id: "my-testnet-01"
-  # BabylonChain chain RPC address
-  bbn_rpc_address: "http://10.1.1.49:26657"
-  cosmwasm:
-    key: "fp"
-    chain_id: "my-testnet-01"
-    rpc_addr: "http://10.1.1.49:26657"
-    grpc_addr: "http://10.1.1.49:9090"
-    account_prefix: "bbn"
-    keyring_backend: "test"
-    gas_adjustment: 1.5
-    gas_prices: "0.002ubbn"
-    key_directory: "/home/fy/.blitz/keyring/"
-    debug: true
-    timeout: 20s
-    block_timeout: 1m0s
-    output_format: json
-    sign_mode: direct
-    submitter_address: "bbn1tvt7058xrce9r3helj9ym0xa08jvaedd543pdm"
-  consumer_id: "test1"
+# fp_addr is the bech32 chain address identifier of the finality provider.
+fp_addr: "bbn1tvt7058xrce9r3helj9ym0xa08jvaedd543pdm"
+
+# btc_pk is the BTC secp256k1 PK of the finality provider encoded in BIP-340 spec
+btc_pk: "0x28252efa5097e0b007dca2d11308c5670e6e822ba39d8dd0ab0c88111ec2b7e3"
 
 eotsManager:
   remote_address: "10.1.1.120:12582"

@@ -1,4 +1,4 @@
-package fp
+package finalityprovider
 
 import (
 	"fmt"
