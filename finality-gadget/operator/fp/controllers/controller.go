@@ -2,14 +2,17 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"math/big"
 
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	bbntypes "github.com/babylonlabs-io/babylon/types"
 	"github.com/babylonlabs-io/finality-gadget/db"
 	"github.com/babylonlabs-io/finality-provider/clientcontroller/api"
 	"github.com/babylonlabs-io/finality-provider/clientcontroller/opstackl2"
@@ -25,7 +28,6 @@ import (
 var _ api.ConsumerController = &OrbitConsumerController{}
 
 type OrbitConsumerController struct {
-	inner  *opstackl2.OPStackL2ConsumerController
 	cfg    *fpcfg.OPStackL2Config
 	logger *zap.Logger
 
@@ -44,9 +46,14 @@ func NewOrbitConsumerController(
 	fpConfig *fpcfg.Config,
 	zapLogger *zap.Logger,
 ) (*OrbitConsumerController, error) {
-	inner, err := opstackl2.NewOPStackL2ConsumerController(fpConfig.OPStackL2Config, zapLogger)
+	if err := fpConfig.OPStackL2Config.Validate(); err != nil {
+		return nil, err
+	}
+	cwConfig := fpConfig.OPStackL2Config.ToCosmwasmConfig()
+
+	cwClient, err := opstackl2.NewCwClient(&cwConfig, zapLogger)
 	if err != nil {
-		return nil, errors.Wrap(err, "inner NewOrbitConsumerController failed")
+		return nil, errors.Errorf("failed to create CW client: %w", err)
 	}
 
 	l2Client, err := l2eth.NewL2EthClient(ctx, &cfg.Layer2)
@@ -75,11 +82,10 @@ func NewOrbitConsumerController(
 	}
 
 	return &OrbitConsumerController{
-		inner:                inner,
 		cfg:                  fpConfig.OPStackL2Config,
 		logger:               zapLogger,
 		ctx:                  ctx,
-		cwClient:             inner.CwClient,
+		cwClient:             cwClient,
 		finalityGadgetClient: finalityGadgetClient,
 		l2Client:             l2Client,
 		activeHeight:         cfg.Layer2.ActivatedHeight,
@@ -100,7 +106,30 @@ func (wc *OrbitConsumerController) CommitPubRandList(
 	commitment []byte,
 	sig *schnorr.Signature) (*types.TxResponse, error) {
 	wc.logger.Sugar().Debugf("CommitPubRandList %v", startHeight)
-	return wc.inner.CommitPubRandList(fpPk, startHeight, numPubRand, commitment, sig)
+	msg := opstackl2.CommitPublicRandomnessMsg{
+		CommitPublicRandomness: opstackl2.CommitPublicRandomnessMsgParams{
+			FpPubkeyHex: bbntypes.NewBIP340PubKeyFromBTCPK(fpPk).MarshalHex(),
+			StartHeight: startHeight,
+			NumPubRand:  numPubRand,
+			Commitment:  commitment,
+			Signature:   sig.Serialize(),
+		},
+	}
+	payload, err := json.Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+	execMsg := &wasmtypes.MsgExecuteContract{
+		Sender:   wc.cwClient.MustGetAddr(),
+		Contract: wc.cfg.OPFinalityGadgetAddress,
+		Msg:      payload,
+	}
+
+	res, err := wc.cwClient.ReliablySendMsg(wc.Ctx(), execMsg, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &types.TxResponse{TxHash: res.TxHash}, nil
 }
 
 // SubmitBatchFinalitySigs submits a batch of finality signatures to the consumer chain
@@ -145,11 +174,39 @@ func (wc *OrbitConsumerController) QueryLatestFinalizedBlock() (*types.BlockInfo
 
 // QueryLastPublicRandCommit returns the last committed public randomness
 func (wc *OrbitConsumerController) QueryLastPublicRandCommit(fpPk *btcec.PublicKey) (*types.PubRandCommit, error) {
-	res, err := wc.inner.QueryLastPublicRandCommit(fpPk)
+	fpPubKey := bbntypes.NewBIP340PubKeyFromBTCPK(fpPk)
+	queryMsg := &opstackl2.QueryMsg{
+		LastPubRandCommit: &opstackl2.PubRandCommit{
+			BtcPkHex: fpPubKey.MarshalHex(),
+		},
+	}
 
-	wc.logger.Sugar().Debugf("QueryLastPublicRandCommit res %v", res)
+	jsonData, err := json.Marshal(queryMsg)
+	if err != nil {
+		return nil, errors.Errorf("failed marshaling to JSON: %w", err)
+	}
 
-	return res, err
+	stateResp, err := wc.cwClient.QuerySmartContractState(wc.cfg.OPFinalityGadgetAddress, string(jsonData))
+	if err != nil {
+		return nil, errors.Errorf("failed to query smart contract state: %w", err)
+	}
+	if len(stateResp.Data) == 0 {
+		return nil, nil
+	}
+
+	var resp *types.PubRandCommit
+	err = json.Unmarshal(stateResp.Data, &resp)
+	if err != nil {
+		return nil, errors.Errorf("failed to unmarshal response: %w", err)
+	}
+	if resp == nil {
+		return nil, nil
+	}
+	if err := resp.Validate(); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
 
 // QueryBlock queries the block at the given height
@@ -168,7 +225,18 @@ func (wc *OrbitConsumerController) QueryBlock(height uint64) (*types.BlockInfo, 
 
 // QueryIsBlockFinalized queries if the block at the given height is finalized
 func (wc *OrbitConsumerController) QueryIsBlockFinalized(height uint64) (bool, error) {
-	return wc.inner.QueryIsBlockFinalized(height)
+	l2Block, err := wc.QueryLatestFinalizedBlock()
+	if err != nil {
+		return false, err
+	}
+
+	if l2Block == nil {
+		return false, nil
+	}
+	if height > l2Block.Height {
+		return false, nil
+	}
+	return true, nil
 }
 
 // QueryBlocks returns a list of blocks from startHeight to endHeight
@@ -234,5 +302,6 @@ func (wc *OrbitConsumerController) QueryActivatedHeight() (uint64, error) {
 }
 
 func (wc *OrbitConsumerController) Close() error {
-	return wc.inner.Close()
+	wc.l2Client.Close()
+	return wc.cwClient.Stop()
 }
