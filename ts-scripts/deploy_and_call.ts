@@ -44,16 +44,9 @@ async function main(hackatomWasmPath: string) {
   // This contract specific message is passed to the contract
   const msg = {
     admin: alice.address0,
-    params: {
-      covenant_pks: [],
-      covenant_quorum: 1,
-      btc_network: "regtest",
-      max_active_finality_providers: 100,
-      min_pub_rand: 1,
-      min_slashing_tx_fee_sat: 1000,
-      slashing_rate: "String::from(\"0.1\")",
-      slashing_address: "String::from(\"n4cV57jePmAAue2WTTBQzH3k3R2rgWBQwY\")"
-    }
+    consumer_id: "test1",
+    activated_height: 10,
+    is_enabled: true
   };
   const { contractAddress, events } = await client.instantiate(
     alice.address0,
@@ -67,7 +60,7 @@ async function main(hackatomWasmPath: string) {
   console.info(JSON.stringify(events, null, 2));
 
   // Execute contract
-
+  /*
   const executeFee = calculateFee(755_000, gasPrice);
   const result = await client.execute(
     alice.address0,
@@ -90,12 +83,12 @@ async function main(hackatomWasmPath: string) {
 
   console.info(result);
   console.info(JSON.stringify(result.events, null, 2));
-
+  */
 
   console.info(`Contract instantiated at: `, contractAddress);
 }
 
 const repoRoot = process.cwd();
-const hackatom = `${repoRoot}/contracts/wasm/btc_staking.wasm`;
+const hackatom = `${repoRoot}/target/wasm32-unknown-unknown/release/nitro_finality_gadget.wasm`;
 await main(hackatom);
 console.info("The show is over.");

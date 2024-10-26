@@ -7,7 +7,8 @@ use cw_controllers::AdminResponse;
 use nitro_finality_gadget::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use nitro_finality_gadget::state::config::Config;
 
-static WASM: &[u8] = include_bytes!("../../../target/wasm32-unknown-unknown/release/nitro_finality_gadget.wasm");
+static WASM: &[u8] =
+    include_bytes!("../../../target/wasm32-unknown-unknown/release/nitro_finality_gadget.wasm");
 const CREATOR: &str = "creator";
 
 #[test]
