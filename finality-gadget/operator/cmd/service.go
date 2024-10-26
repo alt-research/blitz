@@ -46,7 +46,7 @@ func finalityProvider(cliCtx *cli.Context) error {
 		return err
 	}
 
-	pk, err := config.FinalityProvider.GetBtcPk()
+	pk, err := config.GetBtcPk()
 	if err != nil {
 		log.Fatalf("GetBtcPk failed by %v", err)
 		return err
