@@ -13,6 +13,7 @@ import (
 	"github.com/babylonlabs-io/finality-provider/clientcontroller/babylon"
 	fpeotsmanager "github.com/babylonlabs-io/finality-provider/eotsmanager"
 	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
+	"github.com/babylonlabs-io/finality-provider/finality-provider/proto"
 	"github.com/babylonlabs-io/finality-provider/finality-provider/service"
 
 	"github.com/alt-research/blitz/finality-gadget/client/eotsmanager"
@@ -46,7 +47,7 @@ func NewFinalityProviderAppFromConfig(
 	}
 
 	consumerCon, err := controllers.NewOrbitConsumerController(
-		ctx, cfg, fpConfig, logger,
+		ctx, cfg, fpConfig.OPStackL2Config, logger,
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewOrbitConsumerController failed")
@@ -74,6 +75,10 @@ func NewFinalityProviderApp(
 		inner:  app,
 		logger: logger,
 	}, nil
+}
+
+func (app *FinalityProviderApp) GetAllStoredFinalityProviders() ([]*proto.FinalityProviderInfo, error) {
+	return app.inner.ListAllFinalityProvidersInfo()
 }
 
 // Start starts only the finality-provider daemon without any finality-provider instances

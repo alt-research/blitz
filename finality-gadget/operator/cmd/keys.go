@@ -2,64 +2,26 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"cosmossdk.io/errors"
+	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
 	"github.com/urfave/cli"
 
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
 	"github.com/alt-research/blitz/finality-gadget/core/utils"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
+	"github.com/alt-research/blitz/finality-gadget/operator/finalityprovider/cosmosprovider"
 )
 
 func keysRestore(cliCtx *cli.Context) error {
-	var config configs.OperatorConfig
-	if err := utils.ReadConfig(cliCtx, &config); err != nil {
-		log.Fatalf("read config failed by %v", err)
-		return err
-	}
-	config.WithEnv()
-
 	keyName := cliCtx.Args().Get(0)
 	mnemonic := cliCtx.Args().Get(1)
 
-	logger, err := logging.NewZapLogger(logging.NewLogLevel(config.Common.Production))
-	if err != nil {
-		log.Fatalf("new logger failed by %v", err)
-		return err
-	}
-
-	logger.Debug("key restore", "name", keyName, "mnemonic", mnemonic)
-
-	_, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
-	/*
-		cp, err := finalityprovider.NewProvider(ctx, &config.FinalityProvider, logger.Inner())
-		if err != nil {
-			return errors.Wrap(err, "new provider failed")
-		}
-
-		if cp.KeyExists(keyName) {
-			return errors.Errorf("the key %s already exists", keyName)
-		}
-
-		// TODO: use flag
-		coinType := 118
-
-		address, err := cp.RestoreKey(keyName, mnemonic, uint32(coinType), cp.PCfg.SigningAlgorithm)
-		if err != nil {
-			return err
-		}
-
-		logger.Info("restore key", "address", address)
-	*/
-	return nil
-}
-
-func keysShow(cliCtx *cli.Context) error {
 	var config configs.OperatorConfig
 	if err := utils.ReadConfig(cliCtx, &config); err != nil {
 		log.Fatalf("read config failed by %v", err)
@@ -67,39 +29,42 @@ func keysShow(cliCtx *cli.Context) error {
 	}
 	config.WithEnv()
 
-	_, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	logger, err := logging.NewZapLogger(logging.NewLogLevel(config.Common.Production))
+	fpConfig, err := fpcfg.LoadConfig(config.FinalityProviderHomePath)
+	if err != nil {
+		return fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	zaplogger, err := logging.NewZapLoggerInner(logging.NewLogLevel(config.Common.Production))
 	if err != nil {
 		log.Fatalf("new logger failed by %v", err)
 		return err
 	}
 
-	keyName := cliCtx.Args().Get(0)
+	opCfg := fpConfig.OPStackL2Config
 
-	logger.Info("show key", "name", keyName)
+	provider, err := cosmosprovider.NewCosmosProvider(ctx, opCfg, zaplogger)
+	if err != nil {
+		return err
+	}
 
-	/*
-		cp, err := finalityprovider.NewProvider(ctx, &config.FinalityProvider, logger.Inner())
-		if err != nil {
-			return errors.Wrap(err, "new provider failed")
-		}
+	// zaplogger.Sugar().Infof("key exists %v", provider.KeyExists(keyName))
 
-		keyStore, err := cp.Keybase.Key(keyName)
-		logger.Info("keystore", "store", keyStore, "err", err)
+	if provider.KeyExists(keyName) {
+		return fmt.Errorf("the key %v already exists", keyName)
+	}
 
-		if !cp.KeyExists(keyName) {
-			return errors.Errorf("the key %s no exists", keyName)
-		}
+	// TODO: use flag
+	coinType := uint32(118)
 
-		key, err := cp.GetKeyAddressForKey(keyName)
-		if err != nil {
-			return errors.Wrapf(err, "failed to get key address for %v", keyName)
-		}
+	address, err := provider.RestoreKey(keyName, mnemonic, coinType, provider.PCfg.SigningAlgorithm)
+	if err != nil {
+		return errors.Wrap(err, "failed to restore key")
+	}
 
-		logger.Debug("key address", "name", keyName, "address", key)
-	*/
+	fmt.Printf("restore key: %s\n", address)
 
 	return nil
 }
