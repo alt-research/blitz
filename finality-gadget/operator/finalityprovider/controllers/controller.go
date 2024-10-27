@@ -43,13 +43,13 @@ type OrbitConsumerController struct {
 func NewOrbitConsumerController(
 	ctx context.Context,
 	cfg *configs.OperatorConfig,
-	fpConfig *fpcfg.Config,
+	fpConfig *fpcfg.OPStackL2Config,
 	zapLogger *zap.Logger,
 ) (*OrbitConsumerController, error) {
-	if err := fpConfig.OPStackL2Config.Validate(); err != nil {
+	if err := fpConfig.Validate(); err != nil {
 		return nil, err
 	}
-	cwConfig := fpConfig.OPStackL2Config.ToCosmwasmConfig()
+	cwConfig := fpConfig.ToCosmwasmConfig()
 
 	cwClient, err := opstackl2.NewCwClient(&cwConfig, zapLogger)
 	if err != nil {
@@ -82,7 +82,7 @@ func NewOrbitConsumerController(
 	}
 
 	return &OrbitConsumerController{
-		cfg:                  fpConfig.OPStackL2Config,
+		cfg:                  fpConfig,
 		logger:               zapLogger,
 		ctx:                  ctx,
 		cwClient:             cwClient,
