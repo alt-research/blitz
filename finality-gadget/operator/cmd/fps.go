@@ -8,20 +8,16 @@ import (
 	"os/signal"
 	"syscall"
 
-	"cosmossdk.io/errors"
-	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
-	"github.com/urfave/cli"
-
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
 	"github.com/alt-research/blitz/finality-gadget/core/utils"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
 	"github.com/alt-research/blitz/finality-gadget/operator/finalityprovider/cosmosprovider"
+	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
+	"github.com/pkg/errors"
+	"github.com/urfave/cli"
 )
 
-func keysRestore(cliCtx *cli.Context) error {
-	keyName := cliCtx.Args().Get(0)
-	mnemonic := cliCtx.Args().Get(1)
-
+func fpsRestore(cliCtx *cli.Context) error {
 	var config configs.OperatorConfig
 	if err := utils.ReadConfig(cliCtx, &config); err != nil {
 		log.Fatalf("read config failed by %v", err)
@@ -43,6 +39,8 @@ func keysRestore(cliCtx *cli.Context) error {
 		return err
 	}
 
+	_ = cliCtx.Args().Get(0)
+
 	opCfg := fpConfig.OPStackL2Config
 
 	provider, err := cosmosprovider.NewCosmosProvider(ctx, opCfg, zaplogger)
@@ -50,21 +48,35 @@ func keysRestore(cliCtx *cli.Context) error {
 		return err
 	}
 
-	// zaplogger.Sugar().Infof("key exists %v", provider.KeyExists(keyName))
+	zaplogger.Sugar().Infof("key exists %v", provider.KeyExists(opCfg.Key))
 
-	if provider.KeyExists(keyName) {
-		return fmt.Errorf("the key %v already exists", keyName)
+	return nil
+}
+
+func fpsShow(cliCtx *cli.Context) error {
+	var config configs.OperatorConfig
+	if err := utils.ReadConfig(cliCtx, &config); err != nil {
+		log.Fatalf("read config failed by %v", err)
+		return err
 	}
+	config.WithEnv()
 
-	// TODO: use flag
-	coinType := uint32(118)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	address, err := provider.RestoreKey(keyName, mnemonic, coinType, provider.PCfg.SigningAlgorithm)
+	app, err := newApp(ctx, &config)
 	if err != nil {
-		return errors.Wrap(err, "failed to restore key")
+		return errors.Wrap(err, "new provider failed")
 	}
 
-	fmt.Printf("restore key: %s\n", address)
+	storedFps, err := app.GetAllStoredFinalityProviders()
+	if err != nil {
+		return errors.Wrap(err, "GetAllStoredFinalityProviders failed")
+	}
+
+	for _, sfp := range storedFps {
+		fmt.Printf("finality provider %v\n", sfp)
+	}
 
 	return nil
 }

@@ -6,8 +6,6 @@ toolchain go1.22.6
 
 require (
 	cosmossdk.io/errors v1.0.1
-	cosmossdk.io/log v1.4.1
-	cosmossdk.io/math v1.3.0
 	github.com/CosmWasm/wasmd v0.52.0
 	github.com/avast/retry-go/v4 v4.6.0
 	github.com/babylonlabs-io/babylon v0.9.3-0.20240925223611-a98269d17887
@@ -18,16 +16,15 @@ require (
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
 	github.com/carlmjohnson/versioninfo v0.22.5
 	github.com/cometbft/cometbft v0.38.10
-	github.com/cosmos/cosmos-db v1.0.2
 	github.com/cosmos/cosmos-sdk v0.50.9
 	github.com/cosmos/relayer/v2 v2.5.2
 	github.com/ethereum/go-ethereum v1.14.8
-	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b
 	github.com/lightningnetwork/lnd/kvdb v1.4.1
 	github.com/pkg/errors v0.9.1
 	github.com/rs/cors v1.11.1
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli v1.22.15
+	go.uber.org/atomic v1.10.0
 	go.uber.org/mock v0.4.0
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.66.1
@@ -44,6 +41,8 @@ require (
 	cosmossdk.io/collections v0.4.0 // indirect
 	cosmossdk.io/core v0.11.1 // indirect
 	cosmossdk.io/depinject v1.0.0 // indirect
+	cosmossdk.io/log v1.4.1 // indirect
+	cosmossdk.io/math v1.3.0 // indirect
 	cosmossdk.io/store v1.1.0 // indirect
 	cosmossdk.io/x/circuit v0.1.1 // indirect
 	cosmossdk.io/x/evidence v0.1.1 // indirect
@@ -90,6 +89,7 @@ require (
 	github.com/coreos/go-systemd v0.0.0-20190719114852-fd7a80b32e1f // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/cosmos/btcutil v1.0.5 // indirect
+	github.com/cosmos/cosmos-db v1.0.2 // indirect
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5 // indirect
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
@@ -192,6 +192,7 @@ require (
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/jsternberg/zap-logfmt v1.3.0 // indirect
+	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kkdai/bstream v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.10 // indirect
@@ -287,7 +288,6 @@ require (
 	go.opentelemetry.io/otel/sdk v1.30.0 // indirect
 	go.opentelemetry.io/otel/trace v1.30.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
-	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.28.0 // indirect
 	golang.org/x/exp v0.0.0-20241004190924-225e2abe05e6 // indirect
@@ -334,4 +334,8 @@ replace (
 	github.com/ethereum/go-ethereum => github.com/fyInALT/nitro-go-ethereum v0.0.0-20241023065636-a8b6b50d5204
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
+
+	// avoid v1.66 that has a breaking change for protobuf. That change breaks the relayer.
+	// https://github.com/grpc/grpc-go/issues/7569
+	google.golang.org/grpc => google.golang.org/grpc v1.65.0
 )

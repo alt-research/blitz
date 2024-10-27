@@ -44,7 +44,7 @@ func main() {
 				{
 					Name:   "restore",
 					Usage:  "restore keys from mnemonic",
-					Action: keysRestore,
+					Action: fpsRestore,
 				},
 				{
 					Name:   "show",
