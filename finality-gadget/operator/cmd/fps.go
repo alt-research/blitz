@@ -39,7 +39,8 @@ func fpsRestore(cliCtx *cli.Context) error {
 		return err
 	}
 
-	_ = cliCtx.Args().Get(0)
+	keyName := cliCtx.Args().Get(0)
+	fpBtcPk := cliCtx.Args().Get(1)
 
 	opCfg := fpConfig.OPStackL2Config
 
@@ -48,9 +49,19 @@ func fpsRestore(cliCtx *cli.Context) error {
 		return err
 	}
 
-	zaplogger.Sugar().Infof("key exists %v", provider.KeyExists(opCfg.Key))
+	zaplogger.Sugar().Infof("key exists %v", provider.KeyExists(keyName))
+	if !provider.KeyExists(keyName) {
+		return errors.Errorf("key %v does not exist", keyName)
+	}
 
-	return nil
+	zaplogger.Sugar().Infof("fp btc pk %v", fpBtcPk)
+
+	app, err := newApp(ctx, &config)
+	if err != nil {
+		return errors.Wrap(err, "new provider failed")
+	}
+
+	return app.RestoreFP(ctx, keyName, fpBtcPk)
 }
 
 func fpsShow(cliCtx *cli.Context) error {

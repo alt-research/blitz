@@ -30,20 +30,16 @@ func main() {
 					Usage:  "restore keys from mnemonic",
 					Action: keysRestore,
 				},
-				{
-					Name:  "show",
-					Usage: "show address for key",
-				},
 			},
 		},
 		{
 			Name:    "fps",
 			Aliases: []string{"k"},
-			Usage:   "subcommand for keys",
+			Usage:   "subcommand for finality provider manage",
 			Subcommands: []cli.Command{
 				{
 					Name:   "restore",
-					Usage:  "restore keys from mnemonic",
+					Usage:  "restore a fp as submitter",
 					Action: fpsRestore,
 				},
 				{
