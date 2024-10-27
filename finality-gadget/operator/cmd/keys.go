@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
+	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
@@ -36,30 +39,16 @@ func keysRestore(cliCtx *cli.Context) error {
 	_, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	/*
-		cp, err := finalityprovider.NewProvider(ctx, &config.FinalityProvider, logger.Inner())
-		if err != nil {
-			return errors.Wrap(err, "new provider failed")
-		}
+	// check the config file exists
+	_, err = fpcfg.LoadConfig(config.FinalityProviderHomePath)
+	if err != nil {
+		return nil // config does not exist, so does not update it
+	}
 
-		if cp.KeyExists(keyName) {
-			return errors.Errorf("the key %s already exists", keyName)
-		}
-
-		// TODO: use flag
-		coinType := 118
-
-		address, err := cp.RestoreKey(keyName, mnemonic, uint32(coinType), cp.PCfg.SigningAlgorithm)
-		if err != nil {
-			return err
-		}
-
-		logger.Info("restore key", "address", address)
-	*/
 	return nil
 }
 
-func keysShow(cliCtx *cli.Context) error {
+func fpsShow(cliCtx *cli.Context) error {
 	var config configs.OperatorConfig
 	if err := utils.ReadConfig(cliCtx, &config); err != nil {
 		log.Fatalf("read config failed by %v", err)
@@ -67,39 +56,22 @@ func keysShow(cliCtx *cli.Context) error {
 	}
 	config.WithEnv()
 
-	_, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	logger, err := logging.NewZapLogger(logging.NewLogLevel(config.Common.Production))
+	app, err := newApp(ctx, &config)
 	if err != nil {
-		log.Fatalf("new logger failed by %v", err)
-		return err
+		return errors.Wrap(err, "new provider failed")
 	}
 
-	keyName := cliCtx.Args().Get(0)
+	storedFps, err := app.GetAllStoredFinalityProviders()
+	if err != nil {
+		return errors.Wrap(err, "GetAllStoredFinalityProviders failed")
+	}
 
-	logger.Info("show key", "name", keyName)
-
-	/*
-		cp, err := finalityprovider.NewProvider(ctx, &config.FinalityProvider, logger.Inner())
-		if err != nil {
-			return errors.Wrap(err, "new provider failed")
-		}
-
-		keyStore, err := cp.Keybase.Key(keyName)
-		logger.Info("keystore", "store", keyStore, "err", err)
-
-		if !cp.KeyExists(keyName) {
-			return errors.Errorf("the key %s no exists", keyName)
-		}
-
-		key, err := cp.GetKeyAddressForKey(keyName)
-		if err != nil {
-			return errors.Wrapf(err, "failed to get key address for %v", keyName)
-		}
-
-		logger.Debug("key address", "name", keyName, "address", key)
-	*/
+	for _, sfp := range storedFps {
+		fmt.Printf("finality provider %v\n", sfp)
+	}
 
 	return nil
 }

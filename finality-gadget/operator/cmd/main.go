@@ -31,9 +31,25 @@ func main() {
 					Action: keysRestore,
 				},
 				{
+					Name:  "show",
+					Usage: "show address for key",
+				},
+			},
+		},
+		{
+			Name:    "fps",
+			Aliases: []string{"k"},
+			Usage:   "subcommand for keys",
+			Subcommands: []cli.Command{
+				{
+					Name:   "restore",
+					Usage:  "restore keys from mnemonic",
+					Action: keysRestore,
+				},
+				{
 					Name:   "show",
 					Usage:  "show address for key",
-					Action: keysShow,
+					Action: fpsShow,
 				},
 			},
 		},

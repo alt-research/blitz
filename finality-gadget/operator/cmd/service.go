@@ -28,22 +28,20 @@ func finalityProvider(cliCtx *cli.Context) error {
 	}
 	config.WithEnv()
 
-	cfg, err := fpcfg.LoadConfig(config.FinalityProviderHomePath)
-	if err != nil {
-		return fmt.Errorf("failed to load configuration: %w", err)
-	}
-
-	cfg.NumPubRand = 1
-
-	dbBackend, err := cfg.DatabaseConfig.GetDbBackend()
-	if err != nil {
-		return fmt.Errorf("failed to create db backend: %w", err)
-	}
-
 	logger, err := logging.NewZapLogger(logging.NewLogLevel(config.Common.Production))
 	if err != nil {
 		log.Fatalf("new logger failed by %v", err)
 		return err
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	logger.Info("NewFinalityProviderAppFromConfig")
+
+	app, err := newApp(ctx, &config)
+	if err != nil {
+		return errors.Wrap(err, "new provider failed")
 	}
 
 	pk, err := config.GetBtcPk()
@@ -52,26 +50,37 @@ func finalityProvider(cliCtx *cli.Context) error {
 		return err
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
-	zaplogger, err := logging.NewZapLoggerInner(logging.NewLogLevel(config.Common.Production))
-	if err != nil {
-		log.Fatalf("new logger failed by %v", err)
-		return err
-	}
-
-	logger.Info("NewFinalityProviderAppFromConfig")
-
-	app, err := finalityprovider.NewFinalityProviderAppFromConfig(ctx, &config, cfg, dbBackend, zaplogger)
-	if err != nil {
-		return errors.Wrap(err, "new provider failed")
-	}
-
 	err = app.Start(ctx, bbn.NewBIP340PubKeyFromBTCPK(pk), "")
 	if err != nil {
 		return errors.Wrap(err, "StartFinalityProviderInstance failed")
 	}
 
 	return nil
+}
+
+func newApp(ctx context.Context, config *configs.OperatorConfig) (*finalityprovider.FinalityProviderApp, error) {
+	fpConfig, err := fpcfg.LoadConfig(config.FinalityProviderHomePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	fpConfig.NumPubRand = 1
+
+	zaplogger, err := logging.NewZapLoggerInner(logging.NewLogLevel(config.Common.Production))
+	if err != nil {
+		log.Fatalf("new logger failed by %v", err)
+		return nil, err
+	}
+
+	dbBackend, err := fpConfig.DatabaseConfig.GetDbBackend()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create db backend: %w", err)
+	}
+
+	app, err := finalityprovider.NewFinalityProviderAppFromConfig(ctx, config, fpConfig, dbBackend, zaplogger)
+	if err != nil {
+		return nil, errors.Wrap(err, "new provider failed")
+	}
+
+	return app, nil
 }
