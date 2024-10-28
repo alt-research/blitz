@@ -10,6 +10,8 @@ import (
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
 )
 
+const defaultConfigPath = "./finality-gadget-operator.yaml"
+
 func main() {
 	app := cli.NewApp()
 	app.Flags = configs.Flags

@@ -17,6 +17,8 @@ import (
 	"github.com/alt-research/blitz/finality-gadget/signer/configs"
 )
 
+const defaultConfigPath = "./finality-gadget-signer.yaml"
+
 func main() {
 	app := cli.NewApp()
 	app.Flags = configs.Flags
@@ -34,7 +36,7 @@ func main() {
 
 func signerMain(cliCtx *cli.Context) error {
 	var config configs.SignerConfig
-	if err := utils.ReadConfig(cliCtx, &config); err != nil {
+	if err := utils.ReadConfig(cliCtx, defaultConfigPath, &config); err != nil {
 		log.Fatalf("read config failed by %v", err)
 		return err
 	}

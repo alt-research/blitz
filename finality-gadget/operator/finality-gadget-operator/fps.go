@@ -19,7 +19,7 @@ import (
 
 func fpsRestore(cliCtx *cli.Context) error {
 	var config configs.OperatorConfig
-	if err := utils.ReadConfig(cliCtx, &config); err != nil {
+	if err := utils.ReadConfig(cliCtx, defaultConfigPath, &config); err != nil {
 		log.Fatalf("read config failed by %v", err)
 		return err
 	}
@@ -66,7 +66,7 @@ func fpsRestore(cliCtx *cli.Context) error {
 
 func fpsShow(cliCtx *cli.Context) error {
 	var config configs.OperatorConfig
-	if err := utils.ReadConfig(cliCtx, &config); err != nil {
+	if err := utils.ReadConfig(cliCtx, defaultConfigPath, &config); err != nil {
 		log.Fatalf("read config failed by %v", err)
 		return err
 	}

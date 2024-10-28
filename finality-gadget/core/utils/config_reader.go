@@ -11,17 +11,15 @@ import (
 	"github.com/urfave/cli"
 )
 
-func ReadConfig(cliCtx *cli.Context, o interface{}) error {
+func ReadConfig(cliCtx *cli.Context, defaultPath string, o interface{}) error {
 	configFilePath := cliCtx.GlobalString(ConfigFileFlag.Name)
 
-	if configFilePath != "" {
-		err := readYamlConfig(configFilePath, o)
-		if err != nil {
-			return err
-		}
+	path := configFilePath
+	if configFilePath == "" {
+		path = defaultPath
 	}
 
-	return nil
+	return readYamlConfig(path, o)
 }
 
 func readFile(path string) ([]byte, error) {

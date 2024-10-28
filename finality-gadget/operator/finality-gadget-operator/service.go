@@ -22,7 +22,7 @@ import (
 
 func finalityProvider(cliCtx *cli.Context) error {
 	var config configs.OperatorConfig
-	if err := utils.ReadConfig(cliCtx, &config); err != nil {
+	if err := utils.ReadConfig(cliCtx, defaultConfigPath, &config); err != nil {
 		log.Fatalf("read config failed by %v", err)
 		return err
 	}

@@ -23,7 +23,7 @@ func keysRestore(cliCtx *cli.Context) error {
 	mnemonic := cliCtx.Args().Get(1)
 
 	var config configs.OperatorConfig
-	if err := utils.ReadConfig(cliCtx, &config); err != nil {
+	if err := utils.ReadConfig(cliCtx, defaultConfigPath, &config); err != nil {
 		log.Fatalf("read config failed by %v", err)
 		return err
 	}
