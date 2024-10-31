@@ -74,3 +74,8 @@ btc_pk: "0x28252efa5097e0b007dca2d11308c5670e6e822ba39d8dd0ab0c88111ec2b7e3"
 
 eotsManager:
   remote_address: "10.1.1.120:12582"
+
+metrics:
+  host: "0.0.0.0"
+  port: 2112
+  updateinterval: 1s

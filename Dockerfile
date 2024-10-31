@@ -1,4 +1,4 @@
-FROM golang:1.22.7-alpine as builder
+FROM golang:1.22.7-alpine AS builder
 
 # Version to build. Default is the Git HEAD.
 ARG VERSION="HEAD"
@@ -35,7 +35,7 @@ RUN CGO_LDFLAGS="$CGO_LDFLAGS -lstdc++ -lm -lsodium" \
     make build
 
 # FINAL IMAGE
-FROM alpine:3.16 AS run
+FROM alpine:3.16 AS app
 
 RUN apk add bash curl jq
 
