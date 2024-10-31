@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	fp_instance "github.com/alt-research/blitz/finality-gadget/operator/finalityprovider/instance"
 	"github.com/avast/retry-go/v4"
 	bbntypes "github.com/babylonlabs-io/babylon/types"
 	"go.uber.org/atomic"
@@ -17,7 +16,10 @@ import (
 	"github.com/babylonlabs-io/finality-provider/finality-provider/proto"
 	"github.com/babylonlabs-io/finality-provider/finality-provider/service"
 	"github.com/babylonlabs-io/finality-provider/finality-provider/store"
-	"github.com/babylonlabs-io/finality-provider/metrics"
+	fpmetrics "github.com/babylonlabs-io/finality-provider/metrics"
+
+	"github.com/alt-research/blitz/finality-gadget/metrics"
+	fp_instance "github.com/alt-research/blitz/finality-gadget/operator/finalityprovider/instance"
 )
 
 const instanceTerminatingMsg = "terminating the finality-provider instance due to critical error"
@@ -41,7 +43,8 @@ type FinalityProviderManager struct {
 	em           eotsmanager.EOTSManager
 	logger       *zap.Logger
 
-	metrics *metrics.FpMetrics
+	metrics       *fpmetrics.FpMetrics
+	metricsServer *metrics.Server
 
 	criticalErrChan chan *fp_instance.CriticalError
 
@@ -55,7 +58,8 @@ func NewFinalityProviderManager(
 	cc ccapi.ClientController,
 	consumerCon ccapi.ConsumerController,
 	em eotsmanager.EOTSManager,
-	metrics *metrics.FpMetrics,
+	metrics *fpmetrics.FpMetrics,
+	metricsServer *metrics.Server,
 	logger *zap.Logger,
 ) (*FinalityProviderManager, error) {
 	return &FinalityProviderManager{
@@ -69,6 +73,7 @@ func NewFinalityProviderManager(
 		consumerCon:     consumerCon,
 		em:              em,
 		metrics:         metrics,
+		metricsServer:   metricsServer,
 		logger:          logger,
 		quit:            make(chan struct{}),
 	}, nil
@@ -404,7 +409,7 @@ func (fpm *FinalityProviderManager) addFinalityProviderInstance(
 		return fmt.Errorf("finality-provider instance already exists")
 	}
 
-	fpIns, err := fp_instance.NewFinalityProviderInstance(pk, fpm.config, fpm.fps, fpm.pubRandStore, fpm.cc, fpm.consumerCon, fpm.em, fpm.metrics, passphrase, fpm.criticalErrChan, fpm.logger)
+	fpIns, err := fp_instance.NewFinalityProviderInstance(fpm.metricsServer, pk, fpm.config, fpm.fps, fpm.pubRandStore, fpm.cc, fpm.consumerCon, fpm.em, fpm.metrics, passphrase, fpm.criticalErrChan, fpm.logger)
 	if err != nil {
 		return fmt.Errorf("failed to create finality-provider %s instance: %w", pkHex, err)
 	}

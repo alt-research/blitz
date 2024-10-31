@@ -198,7 +198,7 @@ func (cp *ChainPoller) validateStartHeight(startHeight uint64) error {
 
 	// Allow the start height to be the next chain height
 	if startHeight > currentBestChainHeight+1 {
-		return fmt.Errorf("start height %d is more than the next chain tip height %d", startHeight, currentBestChainHeight+1)
+		cp.logger.Sugar().Warnf("start height %d is more than the next chain tip height %d", startHeight, currentBestChainHeight+1)
 	}
 
 	return nil
@@ -263,10 +263,6 @@ func (cp *ChainPoller) pollChain() {
 			// Note: if the consumer is too slow -- the buffer is full
 			// the channel will block, and we will stop retrieving data from the node
 			cp.blockInfoChan <- block
-		}
-
-		if failedCycles > maxFailedCycles {
-			cp.logger.Fatal("the poller has reached the max failed cycles, exiting")
 		}
 
 		select {

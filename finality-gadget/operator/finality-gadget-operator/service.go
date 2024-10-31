@@ -40,7 +40,19 @@ func finalityProvider(cliCtx *cli.Context) error {
 
 	logger.Info("NewFinalityProviderAppFromConfig")
 
-	app, err := newApp(ctx, &config)
+	zaplogger, err := logging.NewZapLoggerInner(logging.NewLogLevel(config.Common.Production))
+	if err != nil {
+		log.Fatalf("new logger failed by %v", err)
+		return err
+	}
+	promAddr, err := config.MetricsConfig.Address()
+	if err != nil {
+		return fmt.Errorf("failed to get prometheus address: %w", err)
+	}
+	metricsServer := metrics.Start(promAddr, zaplogger)
+	defer metricsServer.Stop(context.Background())
+
+	app, err := newApp(ctx, &config, metricsServer)
 	if err != nil {
 		return errors.Wrap(err, "new provider failed")
 	}
@@ -51,19 +63,6 @@ func finalityProvider(cliCtx *cli.Context) error {
 		return err
 	}
 
-	zaplogger, err := logging.NewZapLoggerInner(logging.NewLogLevel(config.Common.Production))
-	if err != nil {
-		log.Fatalf("new logger failed by %v", err)
-		return err
-	}
-
-	promAddr, err := config.MetricsConfig.Address()
-	if err != nil {
-		return fmt.Errorf("failed to get prometheus address: %w", err)
-	}
-	metricsServer := metrics.Start(promAddr, zaplogger)
-	defer metricsServer.Stop(context.Background())
-
 	err = app.Start(ctx, bbn.NewBIP340PubKeyFromBTCPK(pk), "")
 	if err != nil {
 		return errors.Wrap(err, "StartFinalityProviderInstance failed")
@@ -72,7 +71,7 @@ func finalityProvider(cliCtx *cli.Context) error {
 	return nil
 }
 
-func newApp(ctx context.Context, config *configs.OperatorConfig) (*finalityprovider.FinalityProviderApp, error) {
+func newApp(ctx context.Context, config *configs.OperatorConfig, metricsServer *metrics.Server) (*finalityprovider.FinalityProviderApp, error) {
 	fpConfig, err := fpcfg.LoadConfig(config.FinalityProviderHomePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load configuration: %w", err)
@@ -91,7 +90,7 @@ func newApp(ctx context.Context, config *configs.OperatorConfig) (*finalityprovi
 		return nil, fmt.Errorf("failed to create db backend: %w", err)
 	}
 
-	app, err := finalityprovider.NewFinalityProviderAppFromConfig(ctx, config, fpConfig, dbBackend, zaplogger)
+	app, err := finalityprovider.NewFinalityProviderAppFromConfig(ctx, config, fpConfig, dbBackend, metricsServer, zaplogger)
 	if err != nil {
 		return nil, errors.Wrap(err, "new provider failed")
 	}

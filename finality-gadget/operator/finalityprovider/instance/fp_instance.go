@@ -18,6 +18,7 @@ import (
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
 
+	"github.com/alt-research/blitz/finality-gadget/metrics"
 	fpcc "github.com/babylonlabs-io/finality-provider/clientcontroller"
 	ccapi "github.com/babylonlabs-io/finality-provider/clientcontroller/api"
 	"github.com/babylonlabs-io/finality-provider/eotsmanager"
@@ -25,7 +26,7 @@ import (
 	"github.com/babylonlabs-io/finality-provider/finality-provider/proto"
 	"github.com/babylonlabs-io/finality-provider/finality-provider/service"
 	"github.com/babylonlabs-io/finality-provider/finality-provider/store"
-	"github.com/babylonlabs-io/finality-provider/metrics"
+	fpmetrics "github.com/babylonlabs-io/finality-provider/metrics"
 	"github.com/babylonlabs-io/finality-provider/types"
 )
 
@@ -50,7 +51,9 @@ type FinalityProviderInstance struct {
 	cc          ccapi.ClientController
 	consumerCon ccapi.ConsumerController
 	poller      *ChainPoller
-	metrics     *metrics.FpMetrics
+	metrics     *fpmetrics.FpMetrics
+
+	metricsServer *metrics.Server
 
 	// passphrase is used to unlock private keys
 	passphrase string
@@ -69,6 +72,7 @@ type FinalityProviderInstance struct {
 // NewFinalityProviderInstance returns a FinalityProviderInstance instance with the given Babylon public key
 // the finality-provider should be registered before
 func NewFinalityProviderInstance(
+	metricsServer *metrics.Server,
 	fpPk *bbntypes.BIP340PubKey,
 	cfg *fpcfg.Config,
 	s *store.FinalityProviderStore,
@@ -76,7 +80,7 @@ func NewFinalityProviderInstance(
 	cc ccapi.ClientController,
 	consumerCon ccapi.ConsumerController,
 	em eotsmanager.EOTSManager,
-	metrics *metrics.FpMetrics,
+	metrics *fpmetrics.FpMetrics,
 	passphrase string,
 	errChan chan<- *CriticalError,
 	logger *zap.Logger,
@@ -106,6 +110,7 @@ func NewFinalityProviderInstance(
 		cc:              cc,
 		consumerCon:     consumerCon,
 		metrics:         metrics,
+		metricsServer:   metricsServer,
 	}, nil
 }
 
@@ -155,7 +160,7 @@ func (fp *FinalityProviderInstance) bootstrap() (uint64, error) {
 	if fp.cfg.FastSyncInterval != 0 && fp.checkLagging(latestBlockHeight) {
 		_, err := fp.tryFastSync(latestBlockHeight)
 		if err != nil && !fpcc.IsExpected(err) {
-			return 0, err
+			fp.logger.Sugar().Warnf("the tryFastSync In Bootstrap failed by %v", err.Error())
 		}
 	}
 
