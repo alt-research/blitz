@@ -16,6 +16,7 @@ import (
 
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
 	"github.com/alt-research/blitz/finality-gadget/core/utils"
+	"github.com/alt-research/blitz/finality-gadget/metrics"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
 	"github.com/alt-research/blitz/finality-gadget/operator/finalityprovider"
 )
@@ -49,6 +50,19 @@ func finalityProvider(cliCtx *cli.Context) error {
 		log.Fatalf("GetBtcPk failed by %v", err)
 		return err
 	}
+
+	zaplogger, err := logging.NewZapLoggerInner(logging.NewLogLevel(config.Common.Production))
+	if err != nil {
+		log.Fatalf("new logger failed by %v", err)
+		return err
+	}
+
+	promAddr, err := config.MetricsConfig.Address()
+	if err != nil {
+		return fmt.Errorf("failed to get prometheus address: %w", err)
+	}
+	metricsServer := metrics.Start(promAddr, zaplogger)
+	defer metricsServer.Stop(context.Background())
 
 	err = app.Start(ctx, bbn.NewBIP340PubKeyFromBTCPK(pk), "")
 	if err != nil {
