@@ -52,6 +52,6 @@ func (fm *FpMetrics) RecordOrbitFinalizedHeight(fpBtcPkHex string, height uint64
 	fm.orbitFinalizedHeight.Set(float64(height))
 }
 
-func (fm *FpMetrics) RecordOrbitBabylonFinalizedHeight(fpBtcPkHex string, height uint64) {
+func (fm *FpMetrics) RecordOrbitBabylonFinalizedHeight(fpBtcPkHex string, height uint64, Hash []byte) {
 	fm.orbitBabylonFinalizedHeight.Set(float64(height))
 }

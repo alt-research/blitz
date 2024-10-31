@@ -23,6 +23,8 @@ func (fp *FinalityProviderInstance) FastSync(startHeight, endHeight uint64) (*Fa
 	}
 	defer fp.inSync.Store(false)
 
+	fp.blitzMetrics.RecordOrbitFinalizedHeight(fp.GetBtcPkHex(), endHeight)
+
 	if startHeight > endHeight {
 		return nil, fmt.Errorf("the start height %v should not be higher than the end height %v",
 			startHeight, endHeight)

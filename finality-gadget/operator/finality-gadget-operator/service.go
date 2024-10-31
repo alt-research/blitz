@@ -52,7 +52,7 @@ func finalityProvider(cliCtx *cli.Context) error {
 	metricsServer := metrics.Start(promAddr, zaplogger)
 	defer metricsServer.Stop(context.Background())
 
-	app, err := newApp(ctx, &config, metricsServer)
+	app, err := newApp(ctx, &config, metrics.NewFpMetrics())
 	if err != nil {
 		return errors.Wrap(err, "new provider failed")
 	}
@@ -71,7 +71,7 @@ func finalityProvider(cliCtx *cli.Context) error {
 	return nil
 }
 
-func newApp(ctx context.Context, config *configs.OperatorConfig, metricsServer *metrics.Server) (*finalityprovider.FinalityProviderApp, error) {
+func newApp(ctx context.Context, config *configs.OperatorConfig, blitzMetrics *metrics.FpMetrics) (*finalityprovider.FinalityProviderApp, error) {
 	fpConfig, err := fpcfg.LoadConfig(config.FinalityProviderHomePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load configuration: %w", err)
@@ -90,7 +90,7 @@ func newApp(ctx context.Context, config *configs.OperatorConfig, metricsServer *
 		return nil, fmt.Errorf("failed to create db backend: %w", err)
 	}
 
-	app, err := finalityprovider.NewFinalityProviderAppFromConfig(ctx, config, fpConfig, dbBackend, metricsServer, zaplogger)
+	app, err := finalityprovider.NewFinalityProviderAppFromConfig(ctx, config, fpConfig, dbBackend, blitzMetrics, zaplogger)
 	if err != nil {
 		return nil, errors.Wrap(err, "new provider failed")
 	}

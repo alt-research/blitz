@@ -43,8 +43,8 @@ type FinalityProviderManager struct {
 	em           eotsmanager.EOTSManager
 	logger       *zap.Logger
 
-	metrics       *fpmetrics.FpMetrics
-	metricsServer *metrics.Server
+	metrics      *fpmetrics.FpMetrics
+	blitzMetrics *metrics.FpMetrics
 
 	criticalErrChan chan *fp_instance.CriticalError
 
@@ -59,7 +59,7 @@ func NewFinalityProviderManager(
 	consumerCon ccapi.ConsumerController,
 	em eotsmanager.EOTSManager,
 	metrics *fpmetrics.FpMetrics,
-	metricsServer *metrics.Server,
+	blitzMetrics *metrics.FpMetrics,
 	logger *zap.Logger,
 ) (*FinalityProviderManager, error) {
 	return &FinalityProviderManager{
@@ -73,7 +73,7 @@ func NewFinalityProviderManager(
 		consumerCon:     consumerCon,
 		em:              em,
 		metrics:         metrics,
-		metricsServer:   metricsServer,
+		blitzMetrics:    blitzMetrics,
 		logger:          logger,
 		quit:            make(chan struct{}),
 	}, nil
@@ -409,7 +409,7 @@ func (fpm *FinalityProviderManager) addFinalityProviderInstance(
 		return fmt.Errorf("finality-provider instance already exists")
 	}
 
-	fpIns, err := fp_instance.NewFinalityProviderInstance(fpm.metricsServer, pk, fpm.config, fpm.fps, fpm.pubRandStore, fpm.cc, fpm.consumerCon, fpm.em, fpm.metrics, passphrase, fpm.criticalErrChan, fpm.logger)
+	fpIns, err := fp_instance.NewFinalityProviderInstance(fpm.blitzMetrics, pk, fpm.config, fpm.fps, fpm.pubRandStore, fpm.cc, fpm.consumerCon, fpm.em, fpm.metrics, passphrase, fpm.criticalErrChan, fpm.logger)
 	if err != nil {
 		return fmt.Errorf("failed to create finality-provider %s instance: %w", pkHex, err)
 	}

@@ -46,14 +46,13 @@ type FinalityProviderInstance struct {
 	pubRandState *pubRandState
 	cfg          *fpcfg.Config
 
-	logger      *zap.Logger
-	em          eotsmanager.EOTSManager
-	cc          ccapi.ClientController
-	consumerCon ccapi.ConsumerController
-	poller      *ChainPoller
-	metrics     *fpmetrics.FpMetrics
-
-	metricsServer *metrics.Server
+	logger       *zap.Logger
+	em           eotsmanager.EOTSManager
+	cc           ccapi.ClientController
+	consumerCon  ccapi.ConsumerController
+	poller       *ChainPoller
+	metrics      *fpmetrics.FpMetrics
+	blitzMetrics *metrics.FpMetrics
 
 	// passphrase is used to unlock private keys
 	passphrase string
@@ -72,7 +71,7 @@ type FinalityProviderInstance struct {
 // NewFinalityProviderInstance returns a FinalityProviderInstance instance with the given Babylon public key
 // the finality-provider should be registered before
 func NewFinalityProviderInstance(
-	metricsServer *metrics.Server,
+	blitzMetrics *metrics.FpMetrics,
 	fpPk *bbntypes.BIP340PubKey,
 	cfg *fpcfg.Config,
 	s *store.FinalityProviderStore,
@@ -110,7 +109,7 @@ func NewFinalityProviderInstance(
 		cc:              cc,
 		consumerCon:     consumerCon,
 		metrics:         metrics,
-		metricsServer:   metricsServer,
+		blitzMetrics:    blitzMetrics,
 	}, nil
 }
 
@@ -521,6 +520,11 @@ func (fp *FinalityProviderInstance) retrySubmitFinalitySignatureUntilBlocksFinal
 		// error will be returned if max retries have been reached
 		var res *types.TxResponse
 		var err error
+
+		for _, target := range targetBlocks {
+			fp.blitzMetrics.RecordCommittedHeight(fp.GetBtcPkHex(), target.Height)
+		}
+
 		if len(targetBlocks) == 1 {
 			res, err = fp.SubmitFinalitySignature(targetBlocks[0])
 		} else {
@@ -549,6 +553,10 @@ func (fp *FinalityProviderInstance) retrySubmitFinalitySignatureUntilBlocksFinal
 				return nil, fmt.Errorf("reached max failed cycles with err: %w", err)
 			}
 		} else {
+			for _, target := range targetBlocks {
+				fp.blitzMetrics.RecordOrbitBabylonFinalizedHeight(fp.GetBtcPkHex(), target.Height, target.Hash)
+			}
+
 			// the signature has been successfully submitted
 			return res, nil
 		}
@@ -972,6 +980,9 @@ func (fp *FinalityProviderInstance) latestFinalizedBlockWithRetry() (*types.Bloc
 			return err
 		}
 		response = latestFinalizedBlock
+
+		fp.blitzMetrics.RecordOrbitFinalizedHeight("", latestFinalizedBlock.Height)
+
 		return nil
 	}, service.RtyAtt, service.RtyDel, service.RtyErr, retry.OnRetry(func(n uint, err error) {
 		fp.logger.Debug(

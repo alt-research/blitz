@@ -44,7 +44,7 @@ func NewFinalityProviderAppFromConfig(
 	cfg *configs.OperatorConfig,
 	fpConfig *fpcfg.Config,
 	db kvdb.Backend,
-	metricsServer *metrics.Server,
+	blitzMetrics *metrics.FpMetrics,
 	logger *zap.Logger,
 ) (*FinalityProviderApp, error) {
 
@@ -66,7 +66,7 @@ func NewFinalityProviderAppFromConfig(
 	}
 
 	return NewFinalityProviderApp(
-		fpConfig, cc, consumerCon, em, db, metricsServer, logger,
+		fpConfig, cc, consumerCon, em, db, blitzMetrics, logger,
 	)
 }
 
@@ -76,7 +76,7 @@ func NewFinalityProviderApp(
 	consumerCon ccapi.ConsumerController,
 	em fpeotsmanager.EOTSManager,
 	db kvdb.Backend,
-	metricsServer *metrics.Server,
+	blitzMetrics *metrics.FpMetrics,
 	logger *zap.Logger,
 ) (*FinalityProviderApp, error) {
 	fpStore, err := store.NewFinalityProviderStore(db)
@@ -89,7 +89,7 @@ func NewFinalityProviderApp(
 	}
 
 	fpMetrics := fp_metrics.NewFpMetrics()
-	fpm, err := NewFinalityProviderManager(fpStore, pubRandStore, config, cc, consumerCon, em, fpMetrics, metricsServer, logger)
+	fpm, err := NewFinalityProviderManager(fpStore, pubRandStore, config, cc, consumerCon, em, fpMetrics, blitzMetrics, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create finality-provider manager: %w", err)
 	}
