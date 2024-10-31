@@ -2,6 +2,7 @@ package finalityprovider
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/lightningnetwork/lnd/kvdb"
@@ -14,16 +15,26 @@ import (
 	fpeotsmanager "github.com/babylonlabs-io/finality-provider/eotsmanager"
 	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
 	"github.com/babylonlabs-io/finality-provider/finality-provider/proto"
-	"github.com/babylonlabs-io/finality-provider/finality-provider/service"
+	"github.com/babylonlabs-io/finality-provider/finality-provider/store"
+	fp_metrics "github.com/babylonlabs-io/finality-provider/metrics"
 
 	"github.com/alt-research/blitz/finality-gadget/client/eotsmanager"
+	"github.com/alt-research/blitz/finality-gadget/metrics"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
 	"github.com/alt-research/blitz/finality-gadget/operator/finalityprovider/controllers"
 )
 
 type FinalityProviderApp struct {
-	inner  *service.FinalityProviderApp
-	logger *zap.Logger
+	startOnce sync.Once
+	stopOnce  sync.Once
+
+	quit chan struct{}
+
+	config *fpcfg.Config
+
+	fpManager   *FinalityProviderManager
+	eotsManager fpeotsmanager.EOTSManager
+	logger      *zap.Logger
 
 	wg sync.WaitGroup
 }
@@ -33,6 +44,7 @@ func NewFinalityProviderAppFromConfig(
 	cfg *configs.OperatorConfig,
 	fpConfig *fpcfg.Config,
 	db kvdb.Backend,
+	blitzMetrics *metrics.FpMetrics,
 	logger *zap.Logger,
 ) (*FinalityProviderApp, error) {
 
@@ -54,7 +66,7 @@ func NewFinalityProviderAppFromConfig(
 	}
 
 	return NewFinalityProviderApp(
-		fpConfig, cc, consumerCon, em, db, logger,
+		fpConfig, cc, consumerCon, em, db, blitzMetrics, logger,
 	)
 }
 
@@ -64,31 +76,45 @@ func NewFinalityProviderApp(
 	consumerCon ccapi.ConsumerController,
 	em fpeotsmanager.EOTSManager,
 	db kvdb.Backend,
+	blitzMetrics *metrics.FpMetrics,
 	logger *zap.Logger,
 ) (*FinalityProviderApp, error) {
-	app, err := service.NewFinalityProviderApp(config, cc, consumerCon, em, db, logger)
+	fpStore, err := store.NewFinalityProviderStore(db)
 	if err != nil {
-		return nil, errors.Wrap(err, "NewFinalityProviderApp failed")
+		return nil, fmt.Errorf("failed to initiate finality provider store: %w", err)
+	}
+	pubRandStore, err := store.NewPubRandProofStore(db)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initiate public randomness store: %w", err)
+	}
+
+	fpMetrics := fp_metrics.NewFpMetrics()
+	fpm, err := NewFinalityProviderManager(fpStore, pubRandStore, config, cc, consumerCon, em, fpMetrics, blitzMetrics, logger)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create finality-provider manager: %w", err)
 	}
 
 	return &FinalityProviderApp{
-		inner:  app,
-		logger: logger,
+		fpManager:   fpm,
+		config:      config,
+		eotsManager: em,
+		logger:      logger,
+		quit:        make(chan struct{}),
 	}, nil
 }
 
 func (app *FinalityProviderApp) GetAllStoredFinalityProviders() ([]*proto.FinalityProviderInfo, error) {
-	return app.inner.ListAllFinalityProvidersInfo()
+	return app.fpManager.AllFinalityProviders()
 }
 
 // Start starts only the finality-provider daemon without any finality-provider instances
 func (app *FinalityProviderApp) Start(ctx context.Context, fpPk *bbntypes.BIP340PubKey, passphrase string) error {
-	err := app.inner.Start()
+	err := app.startImpl()
 	if err != nil {
 		return errors.Wrap(err, "start failed")
 	}
 
-	err = app.inner.StartHandlingFinalityProvider(fpPk, passphrase)
+	err = app.fpManager.StartFinalityProvider(fpPk, passphrase)
 	if err != nil {
 		return errors.Wrap(err, "StartHandlingFinalityProvider failed")
 	}
@@ -97,7 +123,7 @@ func (app *FinalityProviderApp) Start(ctx context.Context, fpPk *bbntypes.BIP340
 		select {
 		case <-ctx.Done():
 			app.logger.Sugar().Info("app stop")
-			err := app.inner.Stop()
+			err := app.stopImpl()
 			if err != nil {
 				app.logger.Sugar().Errorf("app stop failed: %v", err)
 				return errors.Wrap(err, "stop failed")
@@ -109,4 +135,44 @@ func (app *FinalityProviderApp) Start(ctx context.Context, fpPk *bbntypes.BIP340
 
 func (app *FinalityProviderApp) Wait() {
 	app.wg.Wait()
+}
+
+// Start starts only the finality-provider daemon without any finality-provider instances
+func (app *FinalityProviderApp) startImpl() error {
+	var startErr error
+	app.startOnce.Do(func() {
+		app.logger.Info("Starting FinalityProviderApp")
+	})
+
+	return startErr
+}
+
+func (app *FinalityProviderApp) stopImpl() error {
+	var stopErr error
+	app.stopOnce.Do(func() {
+		app.logger.Info("Stopping FinalityProviderApp")
+
+		// Always stop the submission loop first to not generate additional events and actions
+		app.logger.Debug("Stopping submission loop")
+		close(app.quit)
+		app.wg.Wait()
+
+		app.logger.Debug("Stopping finality providers")
+		if app.fpManager.isStarted.Swap(true) {
+			if err := app.fpManager.Stop(); err != nil {
+				stopErr = err
+				return
+			}
+		}
+
+		app.logger.Debug("Stopping EOTS manager")
+		if err := app.eotsManager.Close(); err != nil {
+			stopErr = err
+			return
+		}
+
+		app.logger.Debug("FinalityProviderApp successfully stopped")
+
+	})
+	return stopErr
 }

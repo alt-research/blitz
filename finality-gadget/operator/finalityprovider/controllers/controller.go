@@ -279,6 +279,11 @@ func (wc *OrbitConsumerController) QueryLatestBlockHeight() (uint64, error) {
 	logger.Debugf("QueryLatestBlockHeight")
 
 	res, err := wc.queryBlock(rpc.BlockNumberOrHashWithNumber(rpc.SafeBlockNumber))
+	if err != nil {
+		logger.Errorf("QueryLatestBlockHeight failed by %v", err)
+		return 0, err
+	}
+
 	height := res.Height
 	if height <= wc.backHeightCount {
 		height = 1
@@ -286,11 +291,7 @@ func (wc *OrbitConsumerController) QueryLatestBlockHeight() (uint64, error) {
 		height = height - wc.backHeightCount
 	}
 
-	if err != nil {
-		logger.Errorf("QueryLatestBlockHeight failed by %v", err)
-	} else {
-		logger.Debugf("QueryLatestBlockHeight res %v", height)
-	}
+	logger.Debugf("QueryLatestBlockHeight res %v", height)
 
 	return height, err
 }

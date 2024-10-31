@@ -64,7 +64,7 @@ babylon:
   # The max number of retries to an RPC call in case of failure.
   maxretrytimes: 5
 
-finalityProviderHomePath: "/home/fy/.fpd/"
+finalityProviderHomePath: "/home/fy/.fpdback/"
 
 # fp_addr is the bech32 chain address identifier of the finality provider.
 fp_addr: "bbn1tvt7058xrce9r3helj9ym0xa08jvaedd543pdm"

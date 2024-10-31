@@ -9,7 +9,7 @@ import { fromHex } from "@cosmjs/encoding";
 import * as fs from "fs";
 
 // bbn14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sw76fy2
-const rpcEndpoint = "http://10.1.1.49:26657";
+const rpcEndpoint = "https://rpc-euphrates.devnet.babylonlabs.io:443";
 
 // Example user from scripts/wasmd/README.md
 const alice = {
@@ -19,7 +19,7 @@ const alice = {
 };
 
 async function main(hackatomWasmPath: string) {
-  const gasPrice = GasPrice.fromString("0.005ubbn");
+  const gasPrice = GasPrice.fromString("0.00001ubbn");
   const wallet = await DirectSecp256k1HdWallet.fromMnemonic(alice.mnemonic, {
     prefix: "bbn",
   });
