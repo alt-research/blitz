@@ -7,6 +7,7 @@ import (
 	"github.com/alt-research/blitz/finality-gadget/core/configs"
 	commonConfig "github.com/alt-research/blitz/finality-gadget/core/configs"
 	"github.com/alt-research/blitz/finality-gadget/core/utils"
+	"github.com/alt-research/blitz/finality-gadget/metrics"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -17,6 +18,7 @@ type OperatorConfig struct {
 	Layer2            l2eth.Config              `yaml:"layer2,omitempty"`
 	Babylon           configs.BabylonConfig     `yaml:"babylon,omitempty"`
 	EOTSManagerConfig eotsmanager.Config        `yaml:"eotsManager,omitempty"`
+	MetricsConfig     metrics.Config            `yaml:"metrics,omitempty"`
 
 	// fp home root path create by fpd.
 	FinalityProviderHomePath string `yaml:"finalityProviderHomePath,omitempty"`
@@ -32,6 +34,7 @@ func (c *OperatorConfig) WithEnv() {
 	c.Layer2.WithEnv()
 	c.Babylon.WithEnv()
 	c.EOTSManagerConfig.WithEnv()
+	c.MetricsConfig.WithEnv()
 
 	c.FinalityProviderHomePath = utils.LookupEnvStr("FINALITY_PROVIDER_HOME_PATH", c.FinalityProviderHomePath)
 	c.FpAddr = utils.LookupEnvStr("FINALITY_PROVIDER_ADDRESS", c.FpAddr)
