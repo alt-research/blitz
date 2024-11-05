@@ -1,0 +1,39 @@
+services:
+  alt-blitz-eots-manager:
+    env_file:
+      - .env
+    container_name: alt-blitz-eots-manager
+    image: babylonlabs/finality-provider:45a24e1f5c235a829eaeca3c3336053032ec0088
+    ports:
+      - 12582:12582
+    user: root
+    networks:
+      - blitz-network
+    volumes:
+      - ${BLITZ_EOTSD_HOME_ROOT_PATH}:/eotsd_home
+    restart: unless-stopped
+    entrypoint: eotsd
+    command:
+      - 'start'
+      - '--home=/eotsd_home'
+  
+  alt-blitz-operator-node:
+    env_file:
+      - .env
+    container_name: alt-blitz-operator-node
+    image: public.ecr.aws/altlayer/alt-blitz-fg-operator
+    ports:
+      - 2112:2112
+    networks:
+      - blitz-network
+    volumes:
+      - "${BLITZ_HOME_ROOT_PATH}:/fpd"
+    restart: unless-stopped
+    depends_on:
+      - alt-blitz-eots-manager
+    command:
+      - '--config=/fpd/finality-gadget-operator.yaml'
+
+networks:
+  blitz-network:
+    name: ${NETWORK_NAME}
