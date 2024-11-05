@@ -35,3 +35,9 @@ node_modules/
 build/
 bin
 data.db
+docker/configs/data/finality-provider.db
+docker/keyring-test
+docker/configs/keyring-test
+docker/eotsd/keyring-file
+docker/eotsd/keyring-test
+docker/configs/keys.lock

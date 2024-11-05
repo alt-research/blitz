@@ -349,6 +349,8 @@ func (fp *FinalityProviderInstance) randomnessCommitmentLoop(startHeight uint64)
 		)
 	}
 
+	committed := uint64(0)
+
 	for {
 		select {
 		case <-commitRandTicker.C:
@@ -357,6 +359,22 @@ func (fp *FinalityProviderInstance) randomnessCommitmentLoop(startHeight uint64)
 				fp.reportCriticalErr(err)
 				continue
 			}
+
+			if tipBlockHeight == committed {
+				fp.logger.Sugar().Infof("Skip the tipBlockHeight %v for commit pub rand by had committed", tipBlockHeight)
+				continue
+			}
+
+			if tipBlockHeight < committed {
+				fp.logger.Sugar().Warnf("Skip the tipBlockHeight %v to %v for commit pub rand by had committed",
+					tipBlockHeight, committed)
+				continue
+			}
+
+			if tipBlockHeight > committed+1 {
+				fp.logger.Sugar().Warnf("the tipBlockHeight %v is too big to be committed %v", tipBlockHeight, committed)
+			}
+
 			txRes, err := fp.retryCommitPubRandUntilBlockFinalized(tipBlockHeight)
 			if err != nil {
 				fp.metrics.IncrementFpTotalFailedRandomness(fp.GetBtcPkHex())
@@ -371,6 +389,8 @@ func (fp *FinalityProviderInstance) randomnessCommitmentLoop(startHeight uint64)
 					zap.String("pk", fp.GetBtcPkHex()),
 					zap.String("tx_hash", txRes.TxHash),
 				)
+
+				committed = tipBlockHeight
 			}
 
 		case <-fp.quit:
