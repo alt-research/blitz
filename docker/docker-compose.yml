@@ -10,14 +10,12 @@ services:
     networks:
       - blitz-network
     volumes:
-      - type: bind
-        source: ${BLITZ_EOTSD_HOME_ROOT_PATH}
-        target: /home/finality-provide/eotsd_home
+      - ${BLITZ_EOTSD_HOME_ROOT_PATH}:/eotsd_home
     restart: unless-stopped
     entrypoint: eotsd
     command:
       - 'start'
-      - '--home=/home/finality-provide/eotsd_home'
+      - '--home=/eotsd_home'
   
   alt-blitz-operator-node:
     env_file:

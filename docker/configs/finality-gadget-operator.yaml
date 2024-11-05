@@ -73,7 +73,7 @@ fp_addr: "bbn1vd74qq3m49605j4k7ltnpxx3rweqvukcfp3esf"
 btc_pk: "0x1648cb2885f24b25df13d49641cf9af8ebaece3753269e7d6ee33982953fda0b"
 
 eotsManager:
-  remote_address: "10.1.1.120:12582"
+  remote_address: "alt-blitz-eots-manager:12582"
 
 metrics:
   host: "0.0.0.0"
