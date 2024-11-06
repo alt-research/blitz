@@ -542,8 +542,11 @@ func (fp *FinalityProviderInstance) retrySubmitFinalitySignatureUntilBlocksFinal
 		var err error
 
 		for _, target := range targetBlocks {
-			fp.blitzMetrics.RecordCommittedHeight(fp.GetBtcPkHex(), target.Height)
+			if target.Height != 0 {
+				fp.blitzMetrics.RecordCommittedHeight(fp.GetBtcPkHex(), target.Height)
+			}
 		}
+		fp.recordOrbitFinalizedHeight()
 
 		if len(targetBlocks) == 1 {
 			res, err = fp.SubmitFinalitySignature(targetBlocks[0])
@@ -574,8 +577,11 @@ func (fp *FinalityProviderInstance) retrySubmitFinalitySignatureUntilBlocksFinal
 			}
 		} else {
 			for _, target := range targetBlocks {
-				fp.blitzMetrics.RecordOrbitBabylonFinalizedHeight(fp.GetBtcPkHex(), target.Height, target.Hash)
+				if target.Height != 0 {
+					fp.blitzMetrics.RecordOrbitBabylonFinalizedHeight(fp.GetBtcPkHex(), target.Height, target.Hash)
+				}
 			}
+			fp.recordOrbitFinalizedHeight()
 
 			// the signature has been successfully submitted
 			return res, nil
