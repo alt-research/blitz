@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.4
 
 require (
-	cosmossdk.io/math v1.3.0
+	cosmossdk.io/math v1.4.0
 	github.com/babylonlabs-io/babylon v0.9.2-0.20240828065350-81ee356f706d
 	github.com/boljen/go-bitmap v0.0.0-20151001105940-23cd2fb0ce7d
 	github.com/btcsuite/btcd v0.24.2
