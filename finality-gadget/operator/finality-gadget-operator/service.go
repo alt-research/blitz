@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/carlmjohnson/versioninfo"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 
@@ -34,6 +35,8 @@ func finalityProvider(cliCtx *cli.Context) error {
 		log.Fatalf("new logger failed by %v", err)
 		return err
 	}
+
+	logger.Infof("fp operator version %v", versioninfo.Short())
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
