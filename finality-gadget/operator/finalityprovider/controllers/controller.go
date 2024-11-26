@@ -105,7 +105,7 @@ func (wc *OrbitConsumerController) CommitPubRandList(
 	numPubRand uint64,
 	commitment []byte,
 	sig *schnorr.Signature) (*types.TxResponse, error) {
-	wc.logger.Sugar().Debugf("CommitPubRandList %v", startHeight)
+	wc.logger.Sugar().Debugf("CommitPubRandList %v %v", startHeight, wc.cwClient.MustGetAddr())
 	msg := opstackl2.CommitPublicRandomnessMsg{
 		CommitPublicRandomness: opstackl2.CommitPublicRandomnessMsgParams{
 			FpPubkeyHex: bbntypes.NewBIP340PubKeyFromBTCPK(fpPk).MarshalHex(),
@@ -278,7 +278,7 @@ func (wc *OrbitConsumerController) QueryLatestBlockHeight() (uint64, error) {
 	logger := wc.logger.Sugar()
 	logger.Debugf("QueryLatestBlockHeight")
 
-	res, err := wc.queryBlock(rpc.BlockNumberOrHashWithNumber(rpc.SafeBlockNumber))
+	res, err := wc.queryBlock(rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber))
 	if err != nil {
 		logger.Errorf("QueryLatestBlockHeight failed by %v", err)
 		return 0, err
