@@ -28,41 +28,8 @@ layer2:
 ###############################################################
 babylon:
   finality_gadget:
-    # rpc host address of the L2 node
-    l2rpchost: "http://10.1.1.39:8547"
-    # the nitro finality gadget contract address in babylon chain
-    fgcontractaddress: "bbn1dvepyy7s2nkfep05c4v6tfkmzqyvz7x3nj6ddj3kkr8nfsmmylhq6a5yp4"
-    # host:port to listen for gRPC connections
-    grpclistener: "0.0.0.0:50051"
-    # host:port to listen for HTTP connections
-    httplistener: "0.0.0.0:8080"
-    # the chain id of babylon chain
-    bbnchainid: "my-testnet-01"
-    # the rpc address url for babylon chain
-    bbnrpcaddress: "http://10.1.1.49:26657"
-    # The daemon's rpc listening address.
-    bitcoinrpchost: "alt-blitz-eots-manager:18443"
-    # Username for RPC connections.
-    bitcoinrpcuser: "test"
-    # Password for RPC connections.
-    bitcoinrpcpass: "123456"
-    # disable TLS for RPC connections
-    bitcoindisabletls: true
-    # The time interval between each retry.
-    pollinterval: "10s"
     # path to the DB file
     dbfilepath: "data.db"
-  # The maximum number of peers staker will choose from the backend node to 
-  # retrieve pruned blocks from. This only applies to pruned nodes.
-  prunedNodeMaxpeers: 8
-  # The interval that will be used to poll bitcoind for new blocks. Only used if rpcpolling is true.
-  blockpollinginterval: "30s"
-  # The interval that will be used to poll bitcoind for new tx. Only used if rpcpolling is true.
-  txpollinginterval: "30s"
-  # Size of the Bitcoin blocks cache.
-  blockcachesize: 20971520
-  # The max number of retries to an RPC call in case of failure.
-  maxretrytimes: 5
 
 finalityProviderHomePath: "/fpd/"
 
