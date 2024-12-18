@@ -50,7 +50,7 @@ func (c *OperatorConfig) GetBtcPk() (*btcec.PublicKey, error) {
 
 	btcPk, err := schnorr.ParsePubKey(btcPkBytes)
 	if err != nil {
-		return nil, errors.Wrapf(err, "invalid BTC public key: %w", c.BtcPk)
+		return nil, errors.Wrapf(err, "invalid BTC public key: %s", c.BtcPk)
 	}
 
 	return btcPk, nil
