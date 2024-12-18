@@ -22,7 +22,6 @@ import (
 
 	"github.com/alt-research/blitz/finality-gadget/client/l2eth"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
-	sdkClient "github.com/alt-research/blitz/finality-gadget/sdk/client"
 )
 
 var _ api.ConsumerController = &OrbitConsumerController{}
@@ -31,10 +30,9 @@ type OrbitConsumerController struct {
 	cfg    *fpcfg.OPStackL2Config
 	logger *zap.Logger
 
-	ctx                  context.Context
-	finalityGadgetClient sdkClient.IFinalityGadget
-	cwClient             *cwcclient.Client
-	l2Client             *l2eth.L2EthClient
+	ctx      context.Context
+	cwClient *cwcclient.Client
+	l2Client *l2eth.L2EthClient
 
 	activeHeight    uint64
 	backHeightCount uint64
@@ -62,7 +60,7 @@ func NewOrbitConsumerController(
 	}
 
 	// Init local DB for storing and querying blocks
-	db, err := db.NewBBoltHandler(cfg.Babylon.FinalityGadget().DBFilePath, zapLogger)
+	db, err := db.NewBBoltHandler(cfg.Babylon.FinalityGadgetCfg.DBFilePath, zapLogger)
 	if err != nil {
 		return nil, errors.Errorf("failed to create DB handler: %w", err)
 	}
@@ -72,24 +70,14 @@ func NewOrbitConsumerController(
 		return nil, errors.Errorf("create initial buckets error: %w", err)
 	}
 
-	finalityGadgetClient, err := sdkClient.NewFinalityGadget(
-		cfg.Babylon.FinalityGadget(),
-		db,
-		zapLogger,
-	)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create babylon client")
-	}
-
 	return &OrbitConsumerController{
-		cfg:                  fpConfig,
-		logger:               zapLogger,
-		ctx:                  ctx,
-		cwClient:             cwClient,
-		finalityGadgetClient: finalityGadgetClient,
-		l2Client:             l2Client,
-		activeHeight:         cfg.Layer2.ActivatedHeight,
-		backHeightCount:      cfg.Layer2.BackHeightCount,
+		cfg:             fpConfig,
+		logger:          zapLogger,
+		ctx:             ctx,
+		cwClient:        cwClient,
+		l2Client:        l2Client,
+		activeHeight:    cfg.Layer2.ActivatedHeight,
+		backHeightCount: cfg.Layer2.BackHeightCount,
 	}, nil
 }
 
