@@ -5,6 +5,7 @@ import (
 
 	wasmdtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	"github.com/babylonlabs-io/babylon/client/babylonclient"
 	bbntypes "github.com/babylonlabs-io/babylon/types"
 	"github.com/babylonlabs-io/finality-provider/types"
 	fptypes "github.com/babylonlabs-io/finality-provider/types"
@@ -97,7 +98,15 @@ func (wc *OrbitConsumerController) SubmitFinalitySig(
 		return nil, err
 	}
 
-	tx := &fptypes.TxResponse{TxHash: res.TxHash, Events: fromCosmosEventsToBytes(res.Events)}
+	events := make([]babylonclient.RelayerEvent, len(res.Events))
+	for i, event := range res.Events {
+		events[i] = babylonclient.RelayerEvent{
+			EventType:  event.EventType,
+			Attributes: event.Attributes,
+		}
+	}
+
+	tx := &fptypes.TxResponse{TxHash: res.TxHash, Events: events}
 
 	if err != nil {
 		wc.logger.Sugar().Errorf("SubmitFinalitySig %v failed: %v", block, err)
