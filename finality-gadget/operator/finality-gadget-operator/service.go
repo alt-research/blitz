@@ -88,7 +88,7 @@ func newApp(ctx context.Context, config *configs.OperatorConfig, blitzMetrics *m
 		return nil, err
 	}
 
-	dbBackend, err := fpConfig.DatabaseConfig.GetDbBackend()
+	dbBackend, err := fpConfig.DatabaseConfig.GetDBBackend()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create db backend: %w", err)
 	}

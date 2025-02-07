@@ -15,7 +15,7 @@ common:
 ###############################################################
 layer2:
   # the http json rpc url of eth layer2
-  eth_rpc_url: "http://10.1.1.39:8547"
+  eth_rpc_url: "http://10.1.1.49:8547"
 
   # the chain id of eth layer2, if not zero, will check if url 's chain id is eq
   chain_id: 412346

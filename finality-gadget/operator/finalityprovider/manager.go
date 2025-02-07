@@ -108,12 +108,12 @@ func (fpm *FinalityProviderManager) monitorCriticalErr() {
 func (fpm *FinalityProviderManager) monitorStatusUpdate() {
 	defer fpm.wg.Done()
 
-	if fpm.config.StatusUpdateInterval == 0 {
+	if fpm.config.Metrics.UpdateInterval == 0 {
 		fpm.logger.Info("the status update is disabled")
 		return
 	}
 
-	statusUpdateTicker := time.NewTicker(fpm.config.StatusUpdateInterval)
+	statusUpdateTicker := time.NewTicker(fpm.config.Metrics.UpdateInterval)
 	defer statusUpdateTicker.Stop()
 
 	for {
@@ -219,10 +219,6 @@ func (fpm *FinalityProviderManager) StartFinalityProvider(fpPk *bbntypes.BIP340P
 		go fpm.monitorStatusUpdate()
 	}
 
-	if fpm.numOfRunningFinalityProviders() >= int(fpm.config.MaxNumFinalityProviders) {
-		return fmt.Errorf("reaching maximum number of running finality providers %v", fpm.config.MaxNumFinalityProviders)
-	}
-
 	if err := fpm.addFinalityProviderInstance(fpPk, passphrase); err != nil {
 		return err
 	}
@@ -248,14 +244,6 @@ func (fpm *FinalityProviderManager) StartAll() error {
 
 	for _, fp := range storedFps {
 		fpBtcPk := fp.GetBIP340BTCPK()
-		if !fp.ShouldStart() {
-			fpm.logger.Info(
-				"the finality provider cannot be started with status",
-				zap.String("eots-pk", fpBtcPk.MarshalHex()),
-				zap.String("status", fp.Status.String()),
-			)
-			continue
-		}
 		if err := fpm.StartFinalityProvider(fpBtcPk, ""); err != nil {
 			return err
 		}

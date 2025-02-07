@@ -61,7 +61,7 @@ func fpsRestore(cliCtx *cli.Context) error {
 		return errors.Wrap(err, "new provider failed")
 	}
 
-	return app.RestoreFP(ctx, keyName, fpBtcPk)
+	return app.RestoreFP(ctx, keyName, opCfg.ChainID, fpBtcPk)
 }
 
 func fpsShow(cliCtx *cli.Context) error {

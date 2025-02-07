@@ -24,6 +24,7 @@ library = []
 [dependencies]
 babylon-apis     = { workspace = true }
 babylon-merkle   = { workspace = true }
+babylon-bindings = { workspace = true }
 cosmwasm-schema  = { workspace = true }
 cosmwasm-std     = { workspace = true }
 cw-controllers   = { workspace = true }

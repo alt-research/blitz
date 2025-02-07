@@ -228,7 +228,7 @@ func (wc *OrbitConsumerController) QueryIsBlockFinalized(height uint64) (bool, e
 }
 
 // QueryBlocks returns a list of blocks from startHeight to endHeight
-func (wc *OrbitConsumerController) QueryBlocks(startHeight, endHeight, limit uint64) ([]*types.BlockInfo, error) {
+func (wc *OrbitConsumerController) QueryBlocks(startHeight, endHeight uint64, limit uint32) ([]*types.BlockInfo, error) {
 	if endHeight < startHeight {
 		return nil, errors.Errorf("the startHeight %v should not be higher than the endHeight %v", startHeight, endHeight)
 	}
@@ -264,7 +264,7 @@ func (wc *OrbitConsumerController) QueryBlocks(startHeight, endHeight, limit uin
 // QueryLatestBlockHeight queries the tip block height of the consumer chain
 func (wc *OrbitConsumerController) QueryLatestBlockHeight() (uint64, error) {
 	logger := wc.logger.Sugar()
-	logger.Debugf("QueryLatestBlockHeight")
+	// logger.Debugf("QueryLatestBlockHeight")
 
 	res, err := wc.queryBlock(rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber))
 	if err != nil {
@@ -279,7 +279,7 @@ func (wc *OrbitConsumerController) QueryLatestBlockHeight() (uint64, error) {
 		height = height - wc.backHeightCount
 	}
 
-	logger.Debugf("QueryLatestBlockHeight res %v", height)
+	// logger.Debugf("QueryLatestBlockHeight res %v", height)
 
 	return height, err
 }
@@ -288,6 +288,35 @@ func (wc *OrbitConsumerController) QueryLatestBlockHeight() (uint64, error) {
 // error will be returned if the consumer chain has not been activated
 func (wc *OrbitConsumerController) QueryActivatedHeight() (uint64, error) {
 	return wc.activeHeight, nil
+}
+
+// QueryFinalityProviderSlashedOrJailed - returns if the fp has been slashed, jailed, err
+// nolint:revive // Ignore stutter warning - full name provides clarity
+func (cc *OrbitConsumerController) QueryFinalityProviderSlashedOrJailed(fpPk *btcec.PublicKey) (bool, bool, error) {
+	// TODO: implement slashed or jailed feature in OP stack L2
+	return false, false, nil
+}
+
+// QueryFinalityActivationBlockHeight returns the block height of the consumer chain
+// starts to accept finality voting and pub rand commit as start height
+// error will be returned if the consumer chain failed to get this value
+// if the consumer chain wants to accept finality voting at any block height
+// the value zero should be returned.
+func (wc *OrbitConsumerController) QueryFinalityActivationBlockHeight() (uint64, error) {
+	// TODO: implement finality activation feature in OP stack L2
+	return 0, nil
+}
+
+// nolint:revive // Ignore stutter warning - full name provides clarity
+func (cc *OrbitConsumerController) QueryFinalityProviderHighestVotedHeight(fpPk *btcec.PublicKey) (uint64, error) {
+	// TODO: implement highest voted height feature in OP stack L2
+	return 0, nil
+}
+
+// nolint:revive // Ignore stutter warning - full name provides clarity
+func (cc *OrbitConsumerController) UnjailFinalityProvider(fpPk *btcec.PublicKey) (*types.TxResponse, error) {
+	// TODO: implement unjail feature in OP stack L2
+	return nil, nil
 }
 
 func (wc *OrbitConsumerController) Close() error {

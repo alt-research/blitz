@@ -10,8 +10,8 @@ import (
 	"go.uber.org/zap"
 
 	bbntypes "github.com/babylonlabs-io/babylon/types"
+	fpcc "github.com/babylonlabs-io/finality-provider/clientcontroller"
 	ccapi "github.com/babylonlabs-io/finality-provider/clientcontroller/api"
-	"github.com/babylonlabs-io/finality-provider/clientcontroller/babylon"
 	fpeotsmanager "github.com/babylonlabs-io/finality-provider/eotsmanager"
 	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
 	"github.com/babylonlabs-io/finality-provider/finality-provider/proto"
@@ -53,7 +53,7 @@ func NewFinalityProviderAppFromConfig(
 		return nil, errors.Wrap(err, "NewEOTSManagerClient failed")
 	}
 
-	cc, err := babylon.NewBabylonController(fpConfig.BabylonConfig, &fpConfig.BTCNetParams, logger)
+	cc, err := fpcc.NewBabylonController(fpConfig, logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewBabylonController failed")
 	}

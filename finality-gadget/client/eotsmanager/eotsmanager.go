@@ -75,11 +75,23 @@ func (e *EOTSManagerClient) SignEOTS(uid []byte, chainID []byte, msg []byte, hei
 	return e.inner.SignEOTS(uid, chainID, msg, height, passphrase)
 }
 
+// UnsafeSignEOTS should only be used in e2e tests for demonstration purposes.
+// Does not offer double sign protection.
+// Use SignEOTS for real operations.
+func (e *EOTSManagerClient) UnsafeSignEOTS(uid []byte, chainID []byte, msg []byte, height uint64, passphrase string) (*btcec.ModNScalar, error) {
+	return e.inner.UnsafeSignEOTS(uid, chainID, msg, height, passphrase)
+}
+
 // SignSchnorrSig signs a Schnorr signature using the private key of the finality provider
 // It fails if the finality provider does not exist or the message size is not 32 bytes
 // or passPhrase is incorrect
 func (e *EOTSManagerClient) SignSchnorrSig(uid []byte, msg []byte, passphrase string) (*schnorr.Signature, error) {
 	return e.inner.SignSchnorrSig(uid, msg, passphrase)
+}
+
+// SaveEOTSKeyName saves a new key under the EOTS key name mapping
+func (e *EOTSManagerClient) SaveEOTSKeyName(pk *btcec.PublicKey, keyName string) error {
+	return e.inner.SaveEOTSKeyName(pk, keyName)
 }
 
 func (e *EOTSManagerClient) Close() error {
