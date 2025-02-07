@@ -264,7 +264,7 @@ func (wc *OrbitConsumerController) QueryBlocks(startHeight, endHeight uint64, li
 // QueryLatestBlockHeight queries the tip block height of the consumer chain
 func (wc *OrbitConsumerController) QueryLatestBlockHeight() (uint64, error) {
 	logger := wc.logger.Sugar()
-	logger.Debugf("QueryLatestBlockHeight")
+	// logger.Debugf("QueryLatestBlockHeight")
 
 	res, err := wc.queryBlock(rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber))
 	if err != nil {
@@ -279,7 +279,7 @@ func (wc *OrbitConsumerController) QueryLatestBlockHeight() (uint64, error) {
 		height = height - wc.backHeightCount
 	}
 
-	logger.Debugf("QueryLatestBlockHeight res %v", height)
+	// logger.Debugf("QueryLatestBlockHeight res %v", height)
 
 	return height, err
 }

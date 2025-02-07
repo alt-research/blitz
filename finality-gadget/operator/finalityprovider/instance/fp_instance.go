@@ -220,6 +220,36 @@ func (fp *FinalityProviderInstance) finalitySigSubmissionLoop() {
 				zap.Uint64("end_height", targetHeight),
 			)
 
+			// check if the public randomness proof had committed
+			lastPublicRandCommit, err := fp.consumerCon.QueryLastPublicRandCommit(fp.GetBtcPk())
+			if err != nil {
+				fp.logger.Sugar().Error("QueryLastPublicRandCommit failed", "err", err.Error())
+				continue
+			}
+
+			if lastPublicRandCommit == nil {
+				fp.logger.Warn("not found last publicRandCommit",
+					zap.String("pk", fp.GetBtcPkHex()),
+				)
+				continue
+			}
+
+			if lastPublicRandCommit.EndHeight() < targetHeight {
+				fp.logger.Warn("the last publicRandCommit end height not cover the target height",
+					zap.Uint64("rand_commit_start_height", lastPublicRandCommit.StartHeight),
+					zap.Uint64("rand_commit_end_height", lastPublicRandCommit.EndHeight()),
+					zap.Uint64("start_height", pollerBlocks[0].Height),
+					zap.Uint64("end_height", targetHeight),
+				)
+				continue
+			}
+			fp.logger.Debug("the last publicRandCommit",
+				zap.Uint64("rand_commit_start_height", lastPublicRandCommit.StartHeight),
+				zap.Uint64("rand_commit_end_height", lastPublicRandCommit.EndHeight()),
+				zap.Uint64("start_height", pollerBlocks[0].Height),
+				zap.Uint64("end_height", targetHeight),
+			)
+
 			processedBlocks, err := fp.processBlocksToVote(pollerBlocks)
 			if err != nil {
 				fp.reportCriticalErr(err)
@@ -363,6 +393,8 @@ func (fp *FinalityProviderInstance) randomnessCommitmentLoop() {
 			if err != nil {
 				fp.metrics.IncrementFpTotalFailedRandomness(fp.GetBtcPkHex())
 				fp.reportCriticalErr(err)
+
+				fp.logger.Sugar().Error("commit pub random failed", "err", err)
 
 				continue
 			}
@@ -549,6 +581,8 @@ func (fp *FinalityProviderInstance) checkBlockFinalization(height uint64) (bool,
 
 // CommitPubRand commits a list of randomness from given start height
 func (fp *FinalityProviderInstance) CommitPubRand(startHeight uint64) (*types.TxResponse, error) {
+	fp.logger.Sugar().Debug("CommitPubRand", "start", startHeight)
+
 	// generate a list of Schnorr randomness pairs
 	// NOTE: currently, calling this will create and save a list of randomness
 	// in case of failure, randomness that has been created will be overwritten

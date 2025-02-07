@@ -435,6 +435,8 @@ github.com/cosmos/keyring v1.2.0 h1:8C1lBP9xhImmIabyXW4c3vFjjLiBdGCmfLUfeZlV1Yo=
 github.com/cosmos/keyring v1.2.0/go.mod h1:fc+wB5KTk9wQ9sDx0kFXB3A0MaeGHM9AwRStKOQ5vOA=
 github.com/cosmos/ledger-cosmos-go v0.13.3 h1:7ehuBGuyIytsXbd4MP43mLeoN2LTOEnk5nvue4rK+yM=
 github.com/cosmos/ledger-cosmos-go v0.13.3/go.mod h1:HENcEP+VtahZFw38HZ3+LS3Iv5XV6svsnkk9vdJtLr8=
+github.com/cosmos/relayer/v2 v2.5.3 h1:Cuhp4MZ8OwWtGf4/UU4HqpEdEDkCvd42uHvY5MK5MpE=
+github.com/cosmos/relayer/v2 v2.5.3/go.mod h1:4N4Dd42G1sKd7zUqOonrGPC2xgdY59T8KevjKodoLUI=
 github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d/go.mod h1:maD7wRr/U5Z6m/iR4s+kqSMx2CaBsrgA7czyZG/E6dU=
 github.com/cpuguy83/go-md2man/v2 v2.0.4 h1:wfIWP927BUkWJb2NmU/kNDYIBTh/ziUX91+lVfRxZq4=
 github.com/cpuguy83/go-md2man/v2 v2.0.4/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
@@ -524,8 +526,6 @@ github.com/fsnotify/fsnotify v1.7.0 h1:8JEhPFa5W2WU7YfeZzPNqzMP6Lwt7L2715Ggo0nos
 github.com/fsnotify/fsnotify v1.7.0/go.mod h1:40Bi/Hjc2AVfZrqy+aj+yEI+/bRxZnMJyTJwOpGvigM=
 github.com/fyInALT/nitro-go-ethereum v0.0.0-20241023065636-a8b6b50d5204 h1:EUCuuVnQfWGzhlKCDT5J7nQ4AOp/fOzd514ZCiJKbgw=
 github.com/fyInALT/nitro-go-ethereum v0.0.0-20241023065636-a8b6b50d5204/go.mod h1:rTmZ7G7uZrQ+0ChYaSjwjRHm6v1ncfEFHn+p7Do1s2A=
-github.com/fyInALT/relayer/v2 v2.5.2-1 h1:cYH9JyulkH7F7HPkH1aJ3aJg7WUJX86vNXWqwx2OEws=
-github.com/fyInALT/relayer/v2 v2.5.2-1/go.mod h1:h4Ng2QsVpxExIq5S+WvLr8slDb9MSBh82gQS4DeMwDo=
 github.com/gammazero/deque v0.2.1 h1:qSdsbG6pgp6nL7A0+K/B7s12mcCY/5l5SIUpMOl+dC0=
 github.com/gammazero/deque v0.2.1/go.mod h1:LFroj8x4cMYCukHJDbxFCkT+r9AndaJnFMuZDV34tuU=
 github.com/gballet/go-libpcsclite v0.0.0-20190607065134-2772fd86a8ff h1:tY80oXqGNY4FhTFhk+o9oFHGINQ/+vhlm8HFzi6znCI=
