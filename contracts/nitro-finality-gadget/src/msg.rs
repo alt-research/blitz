@@ -1,10 +1,14 @@
-use crate::state::config::Config;
-use babylon_apis::finality_api::PubRandCommit;
-use babylon_merkle::Proof;
+#[cfg(not(target_arch = "wasm32"))]
+use {
+    crate::state::config::Config, babylon_apis::finality_api::PubRandCommit,
+    cw_controllers::AdminResponse, std::collections::HashSet,
+};
+
+use babylon_apis::finality_api::Evidence;
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Binary;
-use cw_controllers::AdminResponse;
-use std::collections::HashSet;
+use cosmwasm_std::{Addr, Binary};
+
+use babylon_merkle::Proof;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -73,6 +77,13 @@ pub enum ExecuteMsg {
         block_hash: Binary,
         signature: Binary,
     },
+    /// Slashing message.
+    ///
+    /// This message can be called by the admin only.
+    Slashing {
+        sender: Addr,
+        evidence: Evidence,
+    },
     /// Enable or disable finality gadget.
     ///
     /// This message can be called by the admin only.
@@ -88,4 +99,9 @@ pub enum ExecuteMsg {
     UpdateAdmin {
         admin: String,
     },
+}
+
+#[cw_serde]
+pub struct FinalitySignatureResponse {
+    pub signature: Vec<u8>,
 }
