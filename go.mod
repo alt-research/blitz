@@ -2,7 +2,7 @@ module github.com/alt-research/blitz
 
 go 1.23.1
 
-toolchain go1.23.3
+toolchain go1.23.6
 
 require (
 	cosmossdk.io/errors v1.0.1
