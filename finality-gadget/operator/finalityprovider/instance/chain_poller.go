@@ -113,7 +113,12 @@ func (cp *ChainPoller) blocksWithRetry(start, end uint64, limit uint32) ([]*type
 		}
 
 		if len(block) == 0 {
-			return fmt.Errorf("no blocks found for range %d-%d", start, end)
+			cp.logger.Warn(
+				"no blocks found for range",
+				zap.Uint64("start_height", start),
+				zap.Uint64("end_height", end),
+			)
+			return nil
 		}
 
 		return nil
@@ -230,24 +235,22 @@ func (cp *ChainPoller) pollChain() {
 				// no error and we got the header we wanted to get, bump the state and push
 				// notification about data
 				failedCycles = 0
-				if len(blocks) == 0 {
-					continue
-				}
+				if len(blocks) != 0 {
+					lb := blocks[len(blocks)-1]
+					cp.setNextHeight(lb.Height + 1)
 
-				lb := blocks[len(blocks)-1]
-				cp.setNextHeight(lb.Height + 1)
+					cp.metrics.RecordLastPolledHeight(lb.Height)
 
-				cp.metrics.RecordLastPolledHeight(lb.Height)
+					cp.logger.Info("the poller retrieved the blocks from the consumer chain",
+						zap.Uint64("start_height", blockToRetrieve),
+						zap.Uint64("end_height", lb.Height))
 
-				cp.logger.Info("the poller retrieved the blocks from the consumer chain",
-					zap.Uint64("start_height", blockToRetrieve),
-					zap.Uint64("end_height", lb.Height))
-
-				// push the data to the channel
-				// Note: if the consumer is too slow -- the buffer is full
-				// the channel will block, and we will stop retrieving data from the node
-				for _, block := range blocks {
-					cp.blockInfoChan <- block
+					// push the data to the channel
+					// Note: if the consumer is too slow -- the buffer is full
+					// the channel will block, and we will stop retrieving data from the node
+					for _, block := range blocks {
+						cp.blockInfoChan <- block
+					}
 				}
 			}
 		}

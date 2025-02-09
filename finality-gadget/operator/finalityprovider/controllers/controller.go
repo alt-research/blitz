@@ -230,7 +230,8 @@ func (wc *OrbitConsumerController) QueryIsBlockFinalized(height uint64) (bool, e
 // QueryBlocks returns a list of blocks from startHeight to endHeight
 func (wc *OrbitConsumerController) QueryBlocks(startHeight, endHeight uint64, limit uint32) ([]*types.BlockInfo, error) {
 	if endHeight < startHeight {
-		return nil, errors.Errorf("the startHeight %v should not be higher than the endHeight %v", startHeight, endHeight)
+		// no need return error
+		return nil, nil
 	}
 	count := endHeight - startHeight + 1
 	if count > uint64(limit) {
