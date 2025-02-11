@@ -19,7 +19,6 @@ import (
 	fp_metrics "github.com/babylonlabs-io/finality-provider/metrics"
 
 	"github.com/alt-research/blitz/finality-gadget/client/eotsmanager"
-	"github.com/alt-research/blitz/finality-gadget/client/l2eth"
 	"github.com/alt-research/blitz/finality-gadget/metrics"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
 	"github.com/alt-research/blitz/finality-gadget/operator/finalityprovider/controllers"
@@ -70,13 +69,11 @@ func NewFinalityProviderAppFromConfig(
 		return nil, errors.Wrap(err, "NewOrbitConsumerController failed")
 	}
 
-	l2Client, err := l2eth.NewL2EthClient(ctx, &cfg.Layer2)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create l2 eth client")
-	}
-
 	// TODO: use a simple service
-	rpc := rpc.NewJsonRpcServer(logger, l2Client, cfg.Common.RpcVhosts, cfg.Common.RpcCors)
+	rpc, err := rpc.NewJsonRpcServer(ctx, logger, cfg, fpConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create NewJsonRpcServer")
+	}
 
 	return NewFinalityProviderApp(
 		fpConfig, cc, consumerCon, em,

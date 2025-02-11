@@ -8,6 +8,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"cosmossdk.io/errors"
 	"go.uber.org/zap"
 
 	"github.com/ethereum/go-ethereum/node"
@@ -15,6 +16,9 @@ import (
 	gethrpc "github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/alt-research/blitz/finality-gadget/client/l2eth"
+	"github.com/alt-research/blitz/finality-gadget/operator/configs"
+	fp_instance "github.com/alt-research/blitz/finality-gadget/operator/finalityprovider/instance"
+	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
 )
 
 type JsonRpcServer struct {
@@ -25,17 +29,33 @@ type JsonRpcServer struct {
 	wg      *sync.WaitGroup
 }
 
-func NewJsonRpcServer(logger *zap.Logger, ethClient *l2eth.L2EthClient, vhosts []string, cors []string) *JsonRpcServer {
+func NewJsonRpcServer(
+	ctx context.Context,
+	logger *zap.Logger,
+	cfg *configs.OperatorConfig,
+	fpConfig *fpcfg.Config) (*JsonRpcServer, error) {
+
+	l2Client, err := l2eth.NewL2EthClient(ctx, &cfg.Layer2)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create l2 eth client")
+	}
+
+	finalizedStateProvider, err := fp_instance.NewFinalizedStateProvider(ctx, cfg, logger)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create finalizedStateProvider")
+	}
+
 	return &JsonRpcServer{
 		logger: logger,
-		vhosts: vhosts,
+		vhosts: cfg.Common.RpcVhosts,
 		handler: JsonRpcHandler{
-			logger:    logger,
-			ethClient: ethClient,
+			logger:                 logger,
+			ethClient:              l2Client,
+			finalizedStateProvider: finalizedStateProvider,
 		},
-		cors: cors,
+		cors: cfg.Common.RpcCors,
 		wg:   &sync.WaitGroup{},
-	}
+	}, nil
 }
 
 func (s *JsonRpcServer) GetAPI() gethrpc.API {
@@ -111,8 +131,9 @@ func (s *JsonRpcServer) Wait() {
 }
 
 type JsonRpcHandler struct {
-	logger    *zap.Logger
-	ethClient *l2eth.L2EthClient
+	logger                 *zap.Logger
+	ethClient              *l2eth.L2EthClient
+	finalizedStateProvider *fp_instance.FinalizedStateProvider
 }
 
 type InitOperatorResponse struct {
@@ -124,8 +145,30 @@ func (h *JsonRpcHandler) GetBlockByNumber(
 	ctx context.Context,
 	number rpc.BlockNumber, fullTx bool,
 ) (map[string]json.RawMessage, error) {
+	// for no finalized block number request, we just return the block from chain api
+	if number != rpc.FinalizedBlockNumber {
+		var raw map[string]json.RawMessage
+		err := h.ethClient.Client.Client().CallContext(ctx, &raw, "eth_getBlockByNumber", number.String(), fullTx)
+		if err != nil {
+			return nil, err
+		}
+
+		h.logger.Sugar().Debugf("get block by number %v", number)
+		h.logger.Sugar().Debugf("get block resp %v", raw)
+
+		return raw, nil
+	}
+
+	h.logger.Sugar().Debugf("request GetBlockByNumber by finalized block")
+	finalized, err := h.finalizedStateProvider.QueryFinalizedBlockInBabylon(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to QueryFinalizedBlockInBabylon")
+	}
+
 	var raw map[string]json.RawMessage
-	err := h.ethClient.Client.Client().CallContext(ctx, &raw, "eth_getBlockByNumber", number.String(), fullTx)
+	err = h.ethClient.Client.Client().CallContext(ctx, &raw, "eth_getBlockByNumber",
+		rpc.BlockNumber(finalized).String(),
+		fullTx)
 	if err != nil {
 		return nil, err
 	}
@@ -134,5 +177,4 @@ func (h *JsonRpcHandler) GetBlockByNumber(
 	h.logger.Sugar().Debugf("get block resp %v", raw)
 
 	return raw, nil
-
 }
