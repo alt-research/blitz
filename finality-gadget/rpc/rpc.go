@@ -146,6 +146,7 @@ func (h *JsonRpcHandler) GetBlockByNumber(
 	number rpc.BlockNumber, fullTx bool,
 ) (map[string]json.RawMessage, error) {
 	// for no finalized block number request, we just return the block from chain api
+	// FIXME: current version we need just use this for test
 	if number != rpc.FinalizedBlockNumber {
 		var raw map[string]json.RawMessage
 		err := h.ethClient.Client.Client().CallContext(ctx, &raw, "eth_getBlockByNumber", number.String(), fullTx)
