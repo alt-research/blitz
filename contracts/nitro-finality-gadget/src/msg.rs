@@ -99,6 +99,12 @@ pub enum ExecuteMsg {
     UpdateAdmin {
         admin: String,
     },
+    /// Reset finality gadget.
+    ///
+    /// This message can be called by the admin only.
+    /// If reseted, the verifier can commit from activite height.
+    /// JUST for TEST
+    Reset {},
 }
 
 #[cw_serde]

@@ -1,9 +1,10 @@
 use babylon_bindings::BabylonMsg;
-use cosmwasm_std::{DepsMut, MessageInfo, Response};
+use cosmwasm_std::{DepsMut, MessageInfo, Event, Response};
 
 use crate::{
     error::ContractError,
     state::config::{ADMIN, IS_ENABLED},
+    state::finality::{SIGNATURES, BLOCK_HASHES, BLOCK_VOTES, EVIDENCES}
 };
 
 // Enable or disable the finality gadget.
@@ -38,4 +39,24 @@ fn check_admin(deps: &DepsMut, info: MessageInfo) -> Result<(), ContractError> {
         return Err(ContractError::Unauthorized {});
     }
     Ok(())
+}
+
+// Reset finality gadget, ONLY for test
+pub fn reset(
+    deps: DepsMut,
+    info: MessageInfo
+) -> Result<Response<BabylonMsg>, ContractError> {
+    // Check caller is admin
+    check_admin(&deps, info)?;
+
+    // Reset all storages
+    SIGNATURES.clear(deps.storage);
+    BLOCK_HASHES.clear(deps.storage);
+    BLOCK_VOTES.clear(deps.storage);
+    EVIDENCES.clear(deps.storage);
+
+    let res = Response::default()
+        .add_event( Event::new("admin_reset"));
+
+    Result::Ok(res)
 }
