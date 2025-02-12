@@ -71,6 +71,12 @@ change configs in:
 
 configs by contract address and fp address
 
+Then we can init the database for fp:
+
+```bash
+./build/finality-gadget-operator --config docker/configs/finality-gadget-operator.yaml fps restore {keyname} {btcpubkey}
+```
+
 then boot by
 
 ```bash
