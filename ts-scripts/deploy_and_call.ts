@@ -1,23 +1,24 @@
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { calculateFee, GasPrice } from "@cosmjs/stargate";
-
-// let ProofJSON = require("./scripts/res/proof.json");
-
-import { fromHex } from "@cosmjs/encoding";
+import 'dotenv/config';
 
 import * as fs from "fs";
 
 const rpcEndpoint = "https://rpc-euphrates.devnet.babylonlabs.io:443";
 
+let mnemonic = process.env.BBN_MNEMONIC || ""
+let address = process.env.BBN_DEPLOY_ADDRESS || ""
+
+console.log("use " + address)
+
 // Just for test account, can got from https://babylon-devnet.l2scan.co/faucet
 const alice = {
-  mnemonic:
-    "MNEMONIC",
-  address0: "bbn14w6wmkume2554fgkztjutfdk3rqtdkh70qc82h",
+  mnemonic: mnemonic,
+  address0: address,
 };
 
-const admin = "bbn1hrw93hsxxyf5s4yhmuv8npx4mla2echwn5k94h"
+const admin = address
 
 async function main(hackatomWasmPath: string) {
   const gasPrice = GasPrice.fromString("0.00001ubbn");
