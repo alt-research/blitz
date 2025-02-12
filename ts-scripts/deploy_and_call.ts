@@ -7,7 +7,7 @@ import * as fs from "fs";
 
 const rpcEndpoint = "https://rpc-euphrates.devnet.babylonlabs.io:443";
 
-let mnemonic = process.env.BBN_MNEMONIC || ""
+let mnemonic = process.env.BBN_DEPLOY_MNEMONIC || ""
 let address = process.env.BBN_DEPLOY_ADDRESS || ""
 
 console.log("use " + address)
