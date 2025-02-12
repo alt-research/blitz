@@ -1,5 +1,5 @@
 use crate::error::ContractError;
-use crate::exec::admin::set_enabled;
+use crate::exec::admin::{reset, set_enabled};
 use crate::exec::finality::{
     handle_finality_signature, handle_public_randomness_commit, handle_slashing,
 };
@@ -99,6 +99,7 @@ pub fn execute(
                 AdminError::Std(e) => ContractError::StdError(e),
                 AdminError::NotAdmin {} => ContractError::Unauthorized,
             }),
+        ExecuteMsg::Reset {  } => reset(deps, info),
     }
 }
 
