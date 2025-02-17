@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	bbnclient "github.com/babylonlabs-io/babylon/client/client"
 	bbntypes "github.com/babylonlabs-io/babylon/types"
 	fpcc "github.com/babylonlabs-io/finality-provider/clientcontroller"
 	ccapi "github.com/babylonlabs-io/finality-provider/clientcontroller/api"
@@ -22,6 +23,7 @@ import (
 	"github.com/alt-research/blitz/finality-gadget/metrics"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
 	"github.com/alt-research/blitz/finality-gadget/operator/finalityprovider/controllers"
+	"github.com/alt-research/blitz/finality-gadget/sdk/cwclient"
 )
 
 type FinalityProviderApp struct {
@@ -88,8 +90,21 @@ func NewFinalityProviderApp(
 		return nil, fmt.Errorf("failed to initiate public randomness store: %w", err)
 	}
 
+	bbnConfig := fpcfg.BBNConfigToBabylonConfig(config.BabylonConfig)
+	babylonClient, err := bbnclient.New(
+		&bbnConfig,
+		logger,
+	)
+
+	// Create cosmwasm client
+	cwClient := cwclient.NewCosmWasmClient(
+		babylonClient.QueryClient.RPCClient,
+		config.OPStackL2Config.OPFinalityGadgetAddress)
+
 	fpMetrics := fp_metrics.NewFpMetrics()
-	fpm, err := NewFinalityProviderManager(fpStore, pubRandStore, config, cc, consumerCon, em, fpMetrics, blitzMetrics, logger)
+	fpm, err := NewFinalityProviderManager(
+		fpStore, pubRandStore, config, cc,
+		consumerCon, em, fpMetrics, blitzMetrics, cwClient, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create finality-provider manager: %w", err)
 	}

@@ -48,6 +48,7 @@ async function main(hackatomWasmPath: string) {
     admin: admin,
     consumer_id: "test1",
     activated_height: 10,
+    commit_block_height_interval: 3,
     is_enabled: true
   };
   const { contractAddress, events } = await client.instantiate(

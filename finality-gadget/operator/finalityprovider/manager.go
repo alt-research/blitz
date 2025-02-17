@@ -20,6 +20,7 @@ import (
 
 	"github.com/alt-research/blitz/finality-gadget/metrics"
 	fp_instance "github.com/alt-research/blitz/finality-gadget/operator/finalityprovider/instance"
+	finalitygadget "github.com/alt-research/blitz/finality-gadget/sdk/client"
 )
 
 const instanceTerminatingMsg = "terminating the finality-provider instance due to critical error"
@@ -45,6 +46,7 @@ type FinalityProviderManager struct {
 
 	metrics      *fpmetrics.FpMetrics
 	blitzMetrics *metrics.FpMetrics
+	cwClient     finalitygadget.ICosmWasmClient
 
 	criticalErrChan chan *fp_instance.CriticalError
 
@@ -60,6 +62,7 @@ func NewFinalityProviderManager(
 	em eotsmanager.EOTSManager,
 	metrics *fpmetrics.FpMetrics,
 	blitzMetrics *metrics.FpMetrics,
+	cwClient finalitygadget.ICosmWasmClient,
 	logger *zap.Logger,
 ) (*FinalityProviderManager, error) {
 	return &FinalityProviderManager{
@@ -74,6 +77,7 @@ func NewFinalityProviderManager(
 		em:              em,
 		metrics:         metrics,
 		blitzMetrics:    blitzMetrics,
+		cwClient:        cwClient,
 		logger:          logger,
 		quit:            make(chan struct{}),
 	}, nil
@@ -397,7 +401,11 @@ func (fpm *FinalityProviderManager) addFinalityProviderInstance(
 		return fmt.Errorf("finality-provider instance already exists")
 	}
 
-	fpIns, err := fp_instance.NewFinalityProviderInstance(fpm.blitzMetrics, pk, fpm.config, fpm.fps, fpm.pubRandStore, fpm.cc, fpm.consumerCon, fpm.em, fpm.metrics, passphrase, fpm.criticalErrChan, fpm.logger)
+	fpIns, err := fp_instance.NewFinalityProviderInstance(
+		fpm.blitzMetrics,
+		pk, fpm.config, fpm.fps, fpm.pubRandStore, fpm.cc, fpm.consumerCon, fpm.em, fpm.metrics, passphrase, fpm.criticalErrChan,
+		fpm.cwClient,
+		fpm.logger)
 	if err != nil {
 		return fmt.Errorf("failed to create finality-provider %s instance: %w", pkHex, err)
 	}
