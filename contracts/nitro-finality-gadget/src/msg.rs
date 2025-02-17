@@ -16,6 +16,7 @@ pub struct InstantiateMsg {
     pub consumer_id: String,
     pub activated_height: u64,
     pub is_enabled: bool,
+    pub commit_block_height_interval: u64,
 }
 
 #[cw_serde]
