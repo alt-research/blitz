@@ -68,11 +68,12 @@ func NewFinalityProviderAppFromConfig(
 	}
 
 	return NewFinalityProviderApp(
-		fpConfig, cc, consumerCon, em, db, blitzMetrics, logger,
+		ctx, fpConfig, cc, consumerCon, em, db, blitzMetrics, logger,
 	)
 }
 
 func NewFinalityProviderApp(
+	ctx context.Context,
 	config *fpcfg.Config,
 	cc ccapi.ClientController, // TODO: this should be renamed as client controller is always going to be babylon
 	consumerCon ccapi.ConsumerController,
@@ -103,6 +104,7 @@ func NewFinalityProviderApp(
 
 	fpMetrics := fp_metrics.NewFpMetrics()
 	fpm, err := NewFinalityProviderManager(
+		ctx,
 		fpStore, pubRandStore, config, cc,
 		consumerCon, em, fpMetrics, blitzMetrics, cwClient, logger)
 	if err != nil {
@@ -123,13 +125,13 @@ func (app *FinalityProviderApp) GetAllStoredFinalityProviders() ([]*proto.Finali
 }
 
 // Start starts only the finality-provider daemon without any finality-provider instances
-func (app *FinalityProviderApp) Start(ctx context.Context, fpPk *bbntypes.BIP340PubKey, passphrase string) error {
+func (app *FinalityProviderApp) Start(ctx context.Context, fpPk *bbntypes.BIP340PubKey) error {
 	err := app.startImpl()
 	if err != nil {
 		return errors.Wrap(err, "start failed")
 	}
 
-	err = app.fpManager.StartFinalityProvider(fpPk, passphrase)
+	err = app.fpManager.StartFinalityProvider(fpPk)
 	if err != nil {
 		return errors.Wrap(err, "StartHandlingFinalityProvider failed")
 	}

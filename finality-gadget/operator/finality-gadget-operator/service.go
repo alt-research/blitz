@@ -66,7 +66,7 @@ func finalityProvider(cliCtx *cli.Context) error {
 		return err
 	}
 
-	err = app.Start(ctx, bbn.NewBIP340PubKeyFromBTCPK(pk), "")
+	err = app.Start(ctx, bbn.NewBIP340PubKeyFromBTCPK(pk))
 	if err != nil {
 		return errors.Wrap(err, "StartFinalityProviderInstance failed")
 	}
