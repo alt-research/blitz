@@ -23,18 +23,6 @@ func main() {
 	app.Action = finalityProvider
 	app.Commands = []cli.Command{
 		{
-			Name:    "keys",
-			Aliases: []string{"k"},
-			Usage:   "subcommand for keys",
-			Subcommands: []cli.Command{
-				{
-					Name:   "restore",
-					Usage:  "restore keys from mnemonic",
-					Action: keysRestore,
-				},
-			},
-		},
-		{
 			Name:    "fps",
 			Aliases: []string{"k"},
 			Usage:   "subcommand for finality provider manage",
@@ -56,4 +44,5 @@ func main() {
 	if err != nil {
 		log.Fatalln("Application failed.", "Message:", err)
 	}
+
 }
