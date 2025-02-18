@@ -1,6 +1,7 @@
 package finalityprovider
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -50,10 +51,14 @@ type FinalityProviderManager struct {
 
 	criticalErrChan chan *fp_instance.CriticalError
 
+	// TODO: should not put in this pos
+	ctx context.Context
+
 	quit chan struct{}
 }
 
 func NewFinalityProviderManager(
+	ctx context.Context,
 	fps *store.FinalityProviderStore,
 	pubRandStore *store.PubRandProofStore,
 	config *fpcfg.Config,
@@ -80,6 +85,7 @@ func NewFinalityProviderManager(
 		cwClient:        cwClient,
 		logger:          logger,
 		quit:            make(chan struct{}),
+		ctx:             ctx,
 	}, nil
 }
 
@@ -212,7 +218,7 @@ func (fpm *FinalityProviderManager) setFinalityProviderJailed(fpi *fp_instance.F
 	}
 }
 
-func (fpm *FinalityProviderManager) StartFinalityProvider(fpPk *bbntypes.BIP340PubKey, passphrase string) error {
+func (fpm *FinalityProviderManager) StartFinalityProvider(fpPk *bbntypes.BIP340PubKey) error {
 	if !fpm.isStarted.Load() {
 		fpm.isStarted.Store(true)
 
@@ -223,7 +229,7 @@ func (fpm *FinalityProviderManager) StartFinalityProvider(fpPk *bbntypes.BIP340P
 		go fpm.monitorStatusUpdate()
 	}
 
-	if err := fpm.addFinalityProviderInstance(fpPk, passphrase); err != nil {
+	if err := fpm.addFinalityProviderInstance(fpPk); err != nil {
 		return err
 	}
 
@@ -248,7 +254,7 @@ func (fpm *FinalityProviderManager) StartAll() error {
 
 	for _, fp := range storedFps {
 		fpBtcPk := fp.GetBIP340BTCPK()
-		if err := fpm.StartFinalityProvider(fpBtcPk, ""); err != nil {
+		if err := fpm.StartFinalityProvider(fpBtcPk); err != nil {
 			return err
 		}
 	}
@@ -391,7 +397,6 @@ func (fpm *FinalityProviderManager) numOfRunningFinalityProviders() int {
 // addFinalityProviderInstance creates a finality-provider instance, starts it and adds it into the finality-provider manager
 func (fpm *FinalityProviderManager) addFinalityProviderInstance(
 	pk *bbntypes.BIP340PubKey,
-	passphrase string,
 ) error {
 	fpm.mu.Lock()
 	defer fpm.mu.Unlock()
@@ -402,8 +407,9 @@ func (fpm *FinalityProviderManager) addFinalityProviderInstance(
 	}
 
 	fpIns, err := fp_instance.NewFinalityProviderInstance(
+		fpm.ctx,
 		fpm.blitzMetrics,
-		pk, fpm.config, fpm.fps, fpm.pubRandStore, fpm.cc, fpm.consumerCon, fpm.em, fpm.metrics, passphrase, fpm.criticalErrChan,
+		pk, fpm.config, fpm.fps, fpm.pubRandStore, fpm.cc, fpm.consumerCon, fpm.em, fpm.metrics, fpm.criticalErrChan,
 		fpm.cwClient,
 		fpm.logger)
 	if err != nil {
