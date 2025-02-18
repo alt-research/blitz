@@ -11,7 +11,6 @@ import (
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
 	"github.com/alt-research/blitz/finality-gadget/core/utils"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
-	"github.com/alt-research/blitz/finality-gadget/operator/finalityprovider/cosmosprovider"
 	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
@@ -43,16 +42,6 @@ func fpsRestore(cliCtx *cli.Context) error {
 	fpBtcPk := cliCtx.Args().Get(1)
 
 	opCfg := fpConfig.OPStackL2Config
-
-	provider, err := cosmosprovider.NewCosmosProvider(ctx, opCfg, zaplogger)
-	if err != nil {
-		return err
-	}
-
-	zaplogger.Sugar().Infof("key exists %v", provider.KeyExists(keyName))
-	if !provider.KeyExists(keyName) {
-		return errors.Errorf("key %v does not exist", keyName)
-	}
 
 	zaplogger.Sugar().Infof("fp btc pk %v", fpBtcPk)
 

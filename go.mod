@@ -1,6 +1,6 @@
 module github.com/alt-research/blitz
 
-go 1.23.1
+go 1.23.4
 
 toolchain go1.23.6
 
@@ -10,7 +10,7 @@ require (
 	github.com/avast/retry-go/v4 v4.6.0
 	github.com/babylonlabs-io/babylon v1.99.0-snapshot.250131
 	github.com/babylonlabs-io/finality-gadget v0.1.2-0.20241003113442-8d38bf769d20
-	github.com/babylonlabs-io/finality-provider v0.15.1-0.20250203112002-56354add6747
+	github.com/babylonlabs-io/finality-provider v1.99.0-devnet.6.0.20250215020058-c94f61e3c810
 	github.com/btcsuite/btcd v0.24.2
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0

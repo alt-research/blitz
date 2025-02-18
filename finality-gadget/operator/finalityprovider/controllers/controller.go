@@ -174,7 +174,7 @@ func (wc *OrbitConsumerController) QueryLastPublicRandCommit(fpPk *btcec.PublicK
 		return nil, errors.Errorf("failed marshaling to JSON: %w", err)
 	}
 
-	stateResp, err := wc.cwClient.QuerySmartContractState(wc.cfg.OPFinalityGadgetAddress, string(jsonData))
+	stateResp, err := wc.cwClient.QuerySmartContractState(context.Background(), wc.cfg.OPFinalityGadgetAddress, string(jsonData))
 	if err != nil {
 		return nil, errors.Errorf("failed to query smart contract state: %w", err)
 	}

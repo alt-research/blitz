@@ -802,7 +802,7 @@ func (fp *FinalityProviderInstance) TestSubmitFinalitySignatureAndExtractPrivKey
 
 	eotsSignerFunc := func(b *types.BlockInfo) (*bbntypes.SchnorrEOTSSig, error) {
 		msgToSign := getMsgToSignForVote(b.Height, b.Hash)
-		sig, err := fp.em.UnsafeSignEOTS(fp.btcPk.MustMarshal(), fp.GetChainID(), msgToSign, b.Height, fp.passphrase)
+		sig, err := fp.em.UnsafeSignEOTS(fp.btcPk.MustMarshal(), fp.GetChainID(), msgToSign, b.Height)
 		if err != nil {
 			return nil, fmt.Errorf("failed to sign EOTS: %w", err)
 		}

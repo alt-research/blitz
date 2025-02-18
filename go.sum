@@ -281,6 +281,8 @@ github.com/babylonlabs-io/finality-gadget v0.1.2-0.20241003113442-8d38bf769d20 h
 github.com/babylonlabs-io/finality-gadget v0.1.2-0.20241003113442-8d38bf769d20/go.mod h1:22sIhtVOgLLm9K/fHBjgVUKCjBxa9hNe7gPSUYWU1FE=
 github.com/babylonlabs-io/finality-provider v0.15.1-0.20250203112002-56354add6747 h1:zl9rFBuqkiuldLt+YdnVUYBU9PTndGLc0I9yeibRXlA=
 github.com/babylonlabs-io/finality-provider v0.15.1-0.20250203112002-56354add6747/go.mod h1:BRiEmuBz2BFgoBh6cs0D8H1Y7mOJQ7nhpV18CsooTdQ=
+github.com/babylonlabs-io/finality-provider v1.99.0-devnet.6.0.20250215020058-c94f61e3c810 h1:gQDSazPs9RjcUOksj1jKmrJJWKUxQrFuc0xJgDdlgkE=
+github.com/babylonlabs-io/finality-provider v1.99.0-devnet.6.0.20250215020058-c94f61e3c810/go.mod h1:0qMjDIKXrEZudUTOfELVJiYgUgVWbZf6Htjcngm3FnE=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
