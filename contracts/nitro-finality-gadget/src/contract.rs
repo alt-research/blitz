@@ -27,6 +27,7 @@ pub fn instantiate(
     let config = Config {
         consumer_id: msg.consumer_id,
         activated_height: msg.activated_height,
+        commit_block_height_interval: msg.commit_block_height_interval,
     };
     CONFIG.save(deps.storage, &config)?;
 
@@ -130,6 +131,7 @@ pub(crate) mod tests {
             admin: init_admin.to_string(),
             consumer_id,
             activated_height,
+            commit_block_height_interval: 5,
             is_enabled: true,
         };
 
@@ -160,6 +162,7 @@ pub(crate) mod tests {
             admin: init_admin.to_string(), // Admin provided
             consumer_id: "op-stack-l2-11155420".to_string(),
             activated_height: 13513311,
+            commit_block_height_interval: 5,
             is_enabled: true,
         };
 

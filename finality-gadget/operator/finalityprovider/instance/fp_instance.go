@@ -1,6 +1,7 @@
 package fp_instance
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -27,6 +28,7 @@ import (
 	"github.com/babylonlabs-io/finality-provider/types"
 
 	"github.com/alt-research/blitz/finality-gadget/metrics"
+	finalitygadget "github.com/alt-research/blitz/finality-gadget/sdk/client"
 )
 
 type FinalityProviderInstance struct {
@@ -51,6 +53,7 @@ type FinalityProviderInstance struct {
 	isStarted *atomic.Bool
 
 	blitzMetrics *metrics.FpMetrics
+	cwClient     finalitygadget.ICosmWasmClient
 
 	wg   sync.WaitGroup
 	quit chan struct{}
@@ -70,6 +73,7 @@ func NewFinalityProviderInstance(
 	metrics *fpmetrics.FpMetrics,
 	passphrase string,
 	errChan chan<- *CriticalError,
+	cwClient finalitygadget.ICosmWasmClient,
 	logger *zap.Logger,
 ) (*FinalityProviderInstance, error) {
 	sfp, err := s.GetFinalityProvider(fpPk.MustToBTCPK())
@@ -81,7 +85,9 @@ func NewFinalityProviderInstance(
 		return nil, fmt.Errorf("the finality provider instance is already slashed")
 	}
 
-	return newFinalityProviderInstanceFromStore(blitzMetrics, sfp, cfg, s, prStore, cc, consumerCon, em, metrics, passphrase, errChan, logger)
+	return newFinalityProviderInstanceFromStore(
+		blitzMetrics, sfp, cfg, s, prStore, cc, consumerCon, em, metrics, passphrase, errChan, cwClient, logger,
+	)
 }
 
 // Helper function to create FinalityProviderInstance from store data
@@ -97,6 +103,7 @@ func newFinalityProviderInstanceFromStore(
 	metrics *fpmetrics.FpMetrics,
 	passphrase string,
 	errChan chan<- *CriticalError,
+	cwClient finalitygadget.ICosmWasmClient,
 	logger *zap.Logger,
 ) (*FinalityProviderInstance, error) {
 	return &FinalityProviderInstance{
@@ -113,6 +120,7 @@ func newFinalityProviderInstanceFromStore(
 		consumerCon:     consumerCon,
 		metrics:         metrics,
 		blitzMetrics:    blitzMetrics,
+		cwClient:        cwClient,
 	}, nil
 }
 
@@ -304,8 +312,12 @@ func (fp *FinalityProviderInstance) finalitySigSubmissionLoop() {
 func (fp *FinalityProviderInstance) processBlocksToVote(blocks []*types.BlockInfo) ([]*types.BlockInfo, error) {
 	processedBlocks := make([]*types.BlockInfo, 0, len(blocks))
 
+	commitBlockHeightInterval, err := fp.cwClient.QueryCommitBlockHeightInterval(context.TODO())
+	if err != nil {
+		return nil, errors.Join(err, errors.New("QueryCommitBlockHeightInterval failed"))
+	}
+
 	var hasPower bool
-	var err error
 	for _, b := range blocks {
 		blk := *b
 		if blk.Height <= fp.GetLastVotedHeight() {
@@ -314,6 +326,17 @@ func (fp *FinalityProviderInstance) processBlocksToVote(blocks []*types.BlockInf
 				zap.String("pk", fp.GetBtcPkHex()),
 				zap.Uint64("block_height", blk.Height),
 				zap.Uint64("last_voted_height", fp.GetLastVotedHeight()),
+			)
+
+			continue
+		}
+
+		if blk.Height%commitBlockHeightInterval != 0 {
+			fp.logger.Debug(
+				"the block height is not need commit by no commitBlockHeightInterval",
+				zap.String("pk", fp.GetBtcPkHex()),
+				zap.Uint64("block_height", blk.Height),
+				zap.Uint64("commitBlockHeightInterval", commitBlockHeightInterval),
 			)
 
 			continue

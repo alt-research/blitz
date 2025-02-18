@@ -13,4 +13,6 @@ pub struct Config {
     pub consumer_id: String,
     // activated_height is the consumer chain block height at which the finality gadget is activated
     pub activated_height: u64,
+    // the interval height in commit blocks
+    pub commit_block_height_interval: u64,
 }
