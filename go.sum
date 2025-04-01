@@ -283,8 +283,6 @@ github.com/babylonlabs-io/babylon v1.99.0-snapshot.250131 h1:sw6c4Rkd2SwtZnLSFyV
 github.com/babylonlabs-io/babylon v1.99.0-snapshot.250131/go.mod h1:NxghSOJHuPCwdIKUsSrmmbVJweTRCLW2tLJ4UjlSwUc=
 github.com/babylonlabs-io/finality-gadget v0.1.2-0.20250225043523-6b67aa59533b h1:WuStH6lnIOMlGFe5vDsNikWjrx1nHxlKN188DZscn9E=
 github.com/babylonlabs-io/finality-gadget v0.1.2-0.20250225043523-6b67aa59533b/go.mod h1:6DHze3gjDk0fFekykqiBA3SCbdx3aXQ6NqPVBDDLgp0=
-github.com/babylonlabs-io/finality-provider v1.99.0-devnet.6 h1:lq5EEmZOzrwnTCWNudWutFb5Vj8Ln2chWyN507mAex0=
-github.com/babylonlabs-io/finality-provider v1.99.0-devnet.6/go.mod h1:0qMjDIKXrEZudUTOfELVJiYgUgVWbZf6Htjcngm3FnE=
 github.com/babylonlabs-io/finality-provider v1.99.0-devnet.6.0.20250215020058-c94f61e3c810 h1:gQDSazPs9RjcUOksj1jKmrJJWKUxQrFuc0xJgDdlgkE=
 github.com/babylonlabs-io/finality-provider v1.99.0-devnet.6.0.20250215020058-c94f61e3c810/go.mod h1:0qMjDIKXrEZudUTOfELVJiYgUgVWbZf6Htjcngm3FnE=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
@@ -427,8 +425,8 @@ github.com/cosmos/cosmos-db v1.1.1 h1:FezFSU37AlBC8S98NlSagL76oqBRWq/prTPvFcEJNC
 github.com/cosmos/cosmos-db v1.1.1/go.mod h1:AghjcIPqdhSLP/2Z0yha5xPH3nLnskz81pBx3tcVSAw=
 github.com/cosmos/cosmos-proto v1.0.0-beta.5 h1:eNcayDLpip+zVLRLYafhzLvQlSmyab+RC5W7ZfmxJLA=
 github.com/cosmos/cosmos-proto v1.0.0-beta.5/go.mod h1:hQGLpiIUloJBMdQMMWb/4wRApmI9hjHH05nefC0Ojec=
-github.com/cosmos/cosmos-sdk v0.50.12 h1:WizeD4K74737Gq46/f9fq+WjyZ1cP/1bXwVR3dvyp0g=
-github.com/cosmos/cosmos-sdk v0.50.12/go.mod h1:hrWEFMU1eoXqLJeE6VVESpJDQH67FS1nnMrQIjO2daw=
+github.com/cosmos/cosmos-sdk v0.50.13 h1:xQ32hhzVy7agEe7behMdZN0ezWhPss3KoLZsF9KoBnw=
+github.com/cosmos/cosmos-sdk v0.50.13/go.mod h1:hrWEFMU1eoXqLJeE6VVESpJDQH67FS1nnMrQIjO2daw=
 github.com/cosmos/go-bip39 v1.0.0 h1:pcomnQdrdH22njcAatO0yWojsUnCO3y2tNoV1cb6hHY=
 github.com/cosmos/go-bip39 v1.0.0/go.mod h1:RNJv0H/pOIVgxw6KS7QeX2a0Uo0aKUlfhZ4xuwvCdJw=
 github.com/cosmos/gogogateway v1.2.0 h1:Ae/OivNhp8DqBi/sh2A8a1D0y638GpL3tkmLQAiKxTE=

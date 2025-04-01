@@ -2,7 +2,7 @@ module github.com/alt-research/blitz
 
 go 1.23.4
 
-toolchain go1.23.6
+toolchain go1.24.1
 
 require (
 	cosmossdk.io/errors v1.0.1
@@ -16,7 +16,7 @@ require (
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
 	github.com/carlmjohnson/versioninfo v0.22.5
 	github.com/cometbft/cometbft v0.38.17
-	github.com/cosmos/cosmos-sdk v0.50.12
+	github.com/cosmos/cosmos-sdk v0.50.13
 	github.com/cosmos/relayer/v2 v2.5.3
 	github.com/ethereum/go-ethereum v1.14.8
 	github.com/lightningnetwork/lnd/kvdb v1.4.1
