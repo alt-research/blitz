@@ -1,6 +1,6 @@
 # BLITZ: A Fast Finality Network for Arbitrum Orbit Chains using Babylon
 
-We describe the design of BLITZ — a fast finality network for Arbitrum Orbit chains that leverages BTC staking through Babylon. To make BLITZ a reality, we also present a grant proposal to build BLITZ.
+This repo is an implementation of BLITZ — a fast finality network for Arbitrum Orbit chains that leverages BTC staking through Babylon. 
 
 ## Architecture
 
@@ -10,7 +10,7 @@ We describe the design of BLITZ — a fast finality network for Arbitrum Orbit c
 
 ### Golang / Rust
 
-This project requires Go version 1.21 and Rust `stable` version. You can install Go by following https://go.dev/doc/install, and install Rust by following https://www.rust-lang.org/tools/install.
+The project requires Go version 1.21 and Rust `stable` version. You can install Go by following https://go.dev/doc/install, and install Rust by following https://www.rust-lang.org/tools/install.
 
 Also install essential tools and packages that might be needed to compile and build the binaries. In Ubuntu / Debian systems:
 
@@ -38,7 +38,7 @@ The finality gadget:
 make build
 ```
 
-We can got the finality-gadget-operator in `./build/`.
+The finality-gadget-operator can then be found in `./build/`.
 
 ## Build Docker
 
@@ -50,13 +50,13 @@ docker build . -t blitz-opt
 
 ### Deploy orbit finality gadget contract
 
-we can use call:
+For this, use call:
 
 ```bash
 yarn test-deploy
 ```
 
-we can got contract address in return.
+This will return the contract address.
 
 ### Register Consumer Finality Provider
 
@@ -71,7 +71,7 @@ change configs in:
 
 configs by contract address and fp address
 
-Then we can init the database for fp:
+Then we can initiate the database for the finality provider:
 
 ```bash
 ./build/finality-gadget-operator --config docker/configs/finality-gadget-operator.yaml fps restore {keyname} {btcpubkey}
@@ -83,7 +83,7 @@ then boot by
 docker compose up
 ```
 
-### Boot finality provider for Orbit By bin
+### Boot finality provider for Orbit using bin
 
 Boot eotsd in finality-provider:
 
