@@ -96,3 +96,7 @@ Then boot blitz service:
 ```bash
  ./build/finality-gadget-operator --config finality-gadget-operator.yaml
 ```
+
+### RPC to got finality block number
+
+Can see [rpc](./docs/rpc.md)

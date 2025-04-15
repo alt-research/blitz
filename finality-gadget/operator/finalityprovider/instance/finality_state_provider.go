@@ -119,13 +119,29 @@ func (p *FinalizedStateProvider) QueryFinalizedBlockInBabylon(ctx context.Contex
 
 	if currentNumber > FastCheckNumberCount {
 		checkNumber := currentNumber - FastCheckNumberCount
-		isFinalized, err := p.queryFinalizedBlockInBabylonByNumber(ctx, checkNumber)
+		if checkNumber > fromBlockHeight {
+			isFinalized, err := p.queryFinalizedBlockInBabylonByNumber(ctx, checkNumber)
+			if err != nil {
+				return 0, errors.Wrapf(err, "queryFinalizedBlockInBabylonByNumber failed: %v", checkNumber)
+			}
+
+			if isFinalized {
+				fromBlockHeight = checkNumber
+			}
+		}
+	}
+
+	tryEndBlockHeight := fromBlockHeight + 1
+	if tryEndBlockHeight < currentNumber {
+		isFinalized, err := p.queryFinalizedBlockInBabylonByNumber(ctx, tryEndBlockHeight)
 		if err != nil {
-			return 0, errors.Wrapf(err, "queryFinalizedBlockInBabylonByNumber failed: %v", checkNumber)
+			return 0, errors.Wrapf(err, "queryFinalizedBlockInBabylonByNumber failed: %v", tryEndBlockHeight)
 		}
 
 		if isFinalized {
-			fromBlockHeight = checkNumber
+			fromBlockHeight = tryEndBlockHeight
+		} else {
+			currentNumber = tryEndBlockHeight
 		}
 	}
 
@@ -152,6 +168,8 @@ func (p *FinalizedStateProvider) queryFinalizedBlockInBabylonByNumber(ctx contex
 		return false, errors.Wrapf(err, "QueryIsBlockBabylonFinalizedFromBabylon failed: %v", height)
 	}
 
+	p.logger.Sugar().Debug("queryFinalizedBlockInBabylonByNumber", "height", height, "finalized", isFinalized)
+
 	return isFinalized, nil
 }
 
@@ -167,6 +185,10 @@ func (p *FinalizedStateProvider) queryFinalizedBlockInBabylonFromTo(ctx context.
 		return to, nil
 	}
 
+	if from+1 == to {
+		return from, nil
+	}
+
 	check := (from + to + 1) / 2
 
 	p.logger.Sugar().Debugf("queryFinalizedBlockInBabylonFromTo from %v to %v check %v", from, to, check)
@@ -178,6 +200,7 @@ func (p *FinalizedStateProvider) queryFinalizedBlockInBabylonFromTo(ctx context.
 
 	p.logger.Sugar().Debugf("queryFinalizedBlockInBabylonByNumber got isFinalized: %v", isFinalized)
 	if isFinalized {
+		p.SetLastFinalized(check - 1)
 		return p.queryFinalizedBlockInBabylonFromTo(ctx, check, to)
 	} else {
 		return p.queryFinalizedBlockInBabylonFromTo(ctx, from, check)
@@ -221,13 +244,15 @@ func (p *FinalizedStateProvider) QueryIsBlockBabylonFinalizedFromBabylon(block *
 		return false, errors.Wrap(err, "GetBlockHeightByTimestamp")
 	}
 
+	p.logger.Sugar().Info("allFpPks", "allFpPks", allFpPks)
+
 	// check whether the btc staking is actived
 	earliestDelHeight, err := p.bbnClient.QueryEarliestActiveDelBtcHeight(allFpPks)
 	if err != nil {
 		return false, errors.Wrap(err, "QueryEarliestActiveDelBtcHeight")
 	}
 	if btcblockHeight < earliestDelHeight {
-		return false, types.ErrBtcStakingNotActivated
+		//return false, errors.Wrapf(types.ErrBtcStakingNotActivated, "current %v, earliest %v", btcblockHeight, earliestDelHeight)
 	}
 
 	// get all FPs voting power at this BTC height
@@ -244,7 +269,7 @@ func (p *FinalizedStateProvider) QueryIsBlockBabylonFinalizedFromBabylon(block *
 
 	// no FP has voting power for the consumer chain
 	if totalPower == 0 {
-		return false, types.ErrNoFpHasVotingPower
+		return true, nil
 	}
 
 	// get all FPs that voted this (L2 block height, L2 block hash) combination
@@ -253,6 +278,7 @@ func (p *FinalizedStateProvider) QueryIsBlockBabylonFinalizedFromBabylon(block *
 		return false, errors.Wrap(err, "QueryListOfVotedFinalityProviders")
 	}
 	if votedFpPks == nil {
+		p.logger.Sugar().Debugf("votedFpPks nil")
 		return false, nil
 	}
 	// calculate voted voting power
@@ -265,6 +291,7 @@ func (p *FinalizedStateProvider) QueryIsBlockBabylonFinalizedFromBabylon(block *
 
 	// quorom < 2/3
 	if votedPower*3 < totalPower*2 {
+		p.logger.Sugar().Debugf("voted power no enough %v to %v", votedPower, totalPower)
 		return false, nil
 	}
 	return true, nil
