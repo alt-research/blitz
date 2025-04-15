@@ -150,15 +150,17 @@ func (app *FinalityProviderApp) Start(ctx context.Context, fpPk *bbntypes.BIP340
 		return errors.Wrap(err, "start failed")
 	}
 
-	app.wg.Add(1)
-	go func() {
-		defer func() {
-			app.logger.Debug("json RPC server stopped")
-			app.wg.Done()
-		}()
+	if app.jsonRpcServerIpPortAddr != "" {
+		app.wg.Add(1)
+		go func() {
+			defer func() {
+				app.logger.Debug("json RPC server stopped")
+				app.wg.Done()
+			}()
 
-		app.rpc.StartServer(ctx, app.jsonRpcServerIpPortAddr)
-	}()
+			app.rpc.StartServer(ctx, app.jsonRpcServerIpPortAddr)
+		}()
+	}
 
 	err = app.fpManager.StartFinalityProvider(fpPk)
 	if err != nil {
