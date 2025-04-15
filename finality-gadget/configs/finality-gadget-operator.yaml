@@ -10,6 +10,10 @@ common:
   # used to set the logger level (true = info, false = debug)
   production: false
 
+  rpc_server_ip_port_address: "0.0.0.0:8290"
+  rpc_vhosts: ["*"]
+  rpc_cors: []
+
 ###############################################################
 # The eth layer2 configs ######################################
 ###############################################################

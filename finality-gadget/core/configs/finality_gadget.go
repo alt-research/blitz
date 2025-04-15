@@ -5,9 +5,14 @@ import (
 )
 
 type Config struct {
-	BBNChainID    string `yaml:"bbnchainid" description:"BabylonChain chain ID"`
-	BBNRPCAddress string `yaml:"bbnrpcaddress" description:"BabylonChain chain RPC address"`
-	DBFilePath    string `yaml:"dbfilepath" description:"path to the DB file"`
+	BBNChainID        string `yaml:"bbnchainid" description:"BabylonChain chain ID"`
+	BBNRPCAddress     string `yaml:"bbnrpcaddress" description:"BabylonChain chain RPC address"`
+	DBFilePath        string `yaml:"dbfilepath" description:"path to the DB file"`
+	BitcoinRPCHost    string `yaml:"bitcoinrpchost" description:"rpc host address of the bitcoin node"`
+	BitcoinRPCUser    string `yaml:"bitcoinrpcuser" description:"rpc user of the bitcoin node"`
+	BitcoinRPCPass    string `yaml:"bitcoinrpcpass" description:"rpc password of the bitcoin node"`
+	BitcoinDisableTLS bool   `yaml:"bitcoindisabletls" description:"disable TLS for RPC connections"`
+	FGContractAddress string `yaml:"fgcontractaddress" description:"BabylonChain op finality gadget contract address"`
 }
 
 type BabylonConfig struct {

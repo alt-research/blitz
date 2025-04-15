@@ -30,6 +30,11 @@ babylon:
   finality_gadget:
     # path to the DB file
     dbfilepath: "data.db"
+    bitcoinrpchost: "10.1.1.120"
+    bitcoinrpcuser: ""
+    bitcoinrpcpass: ""
+    bitcoindisabletls: true
+    fgcontractaddress: "bbn1dvepyy7s2nkfep05c4v6tfkmzqyvz7x3nj6ddj3kkr8nfsmmylhq6a5yp4"
 
 finalityProviderHomePath: "/fpd/"
 

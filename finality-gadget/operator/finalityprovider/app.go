@@ -23,6 +23,7 @@ import (
 	"github.com/alt-research/blitz/finality-gadget/metrics"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
 	"github.com/alt-research/blitz/finality-gadget/operator/finalityprovider/controllers"
+	"github.com/alt-research/blitz/finality-gadget/rpc"
 	"github.com/alt-research/blitz/finality-gadget/sdk/cwclient"
 )
 
@@ -36,7 +37,10 @@ type FinalityProviderApp struct {
 
 	fpManager   *FinalityProviderManager
 	eotsManager fpeotsmanager.EOTSManager
+	rpc         *rpc.JsonRpcServer
 	logger      *zap.Logger
+
+	jsonRpcServerIpPortAddr string
 
 	wg sync.WaitGroup
 }
@@ -67,8 +71,19 @@ func NewFinalityProviderAppFromConfig(
 		return nil, errors.Wrap(err, "NewOrbitConsumerController failed")
 	}
 
+	// TODO: use a simple service
+	rpc, err := rpc.NewJsonRpcServer(ctx, logger, cfg, fpConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create NewJsonRpcServer")
+	}
+
 	return NewFinalityProviderApp(
-		ctx, fpConfig, cc, consumerCon, em, db, blitzMetrics, logger,
+		ctx,
+		fpConfig, cc, consumerCon, em,
+		db, blitzMetrics,
+		rpc,
+		cfg.Common.RpcServerIpPortAddress,
+		logger,
 	)
 }
 
@@ -80,6 +95,8 @@ func NewFinalityProviderApp(
 	em fpeotsmanager.EOTSManager,
 	db kvdb.Backend,
 	blitzMetrics *metrics.FpMetrics,
+	rpc *rpc.JsonRpcServer,
+	jsonRpcServerIpPortAddr string,
 	logger *zap.Logger,
 ) (*FinalityProviderApp, error) {
 	fpStore, err := store.NewFinalityProviderStore(db)
@@ -112,11 +129,13 @@ func NewFinalityProviderApp(
 	}
 
 	return &FinalityProviderApp{
-		fpManager:   fpm,
-		config:      config,
-		eotsManager: em,
-		logger:      logger,
-		quit:        make(chan struct{}),
+		fpManager:               fpm,
+		config:                  config,
+		eotsManager:             em,
+		logger:                  logger,
+		rpc:                     rpc,
+		jsonRpcServerIpPortAddr: jsonRpcServerIpPortAddr,
+		quit:                    make(chan struct{}),
 	}, nil
 }
 
@@ -129,6 +148,18 @@ func (app *FinalityProviderApp) Start(ctx context.Context, fpPk *bbntypes.BIP340
 	err := app.startImpl()
 	if err != nil {
 		return errors.Wrap(err, "start failed")
+	}
+
+	if app.jsonRpcServerIpPortAddr != "" {
+		app.wg.Add(1)
+		go func() {
+			defer func() {
+				app.logger.Debug("json RPC server stopped")
+				app.wg.Done()
+			}()
+
+			app.rpc.StartServer(ctx, app.jsonRpcServerIpPortAddr)
+		}()
 	}
 
 	err = app.fpManager.StartFinalityProvider(fpPk)
