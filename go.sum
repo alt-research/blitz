@@ -281,8 +281,6 @@ github.com/aws/aws-sdk-go v1.44.312/go.mod h1:aVsgQcEevwlmQ7qHE9I3h+dtQgpqhFB+i8
 github.com/aws/aws-sdk-go-v2 v0.18.0/go.mod h1:JWVYvqSMppoMJC0x5wdwiImzgXTI9FuZwxzkQq9wy+g=
 github.com/babylonlabs-io/babylon v1.99.0-snapshot.250131 h1:sw6c4Rkd2SwtZnLSFyVPMuf8yor/lNTQt17XP2P3AgY=
 github.com/babylonlabs-io/babylon v1.99.0-snapshot.250131/go.mod h1:NxghSOJHuPCwdIKUsSrmmbVJweTRCLW2tLJ4UjlSwUc=
-github.com/babylonlabs-io/finality-gadget v0.1.2-0.20250225043523-6b67aa59533b h1:WuStH6lnIOMlGFe5vDsNikWjrx1nHxlKN188DZscn9E=
-github.com/babylonlabs-io/finality-gadget v0.1.2-0.20250225043523-6b67aa59533b/go.mod h1:6DHze3gjDk0fFekykqiBA3SCbdx3aXQ6NqPVBDDLgp0=
 github.com/babylonlabs-io/finality-provider v1.99.0-devnet.6.0.20250215020058-c94f61e3c810 h1:gQDSazPs9RjcUOksj1jKmrJJWKUxQrFuc0xJgDdlgkE=
 github.com/babylonlabs-io/finality-provider v1.99.0-devnet.6.0.20250215020058-c94f61e3c810/go.mod h1:0qMjDIKXrEZudUTOfELVJiYgUgVWbZf6Htjcngm3FnE=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
@@ -539,6 +537,8 @@ github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMo
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
 github.com/fsnotify/fsnotify v1.7.0 h1:8JEhPFa5W2WU7YfeZzPNqzMP6Lwt7L2715Ggo0nosvA=
 github.com/fsnotify/fsnotify v1.7.0/go.mod h1:40Bi/Hjc2AVfZrqy+aj+yEI+/bRxZnMJyTJwOpGvigM=
+github.com/fyInALT/finality-gadget v0.0.0-20250211073944-76f1d08e9796 h1:JtMPmzLN1JxJMWnyH4+g0Z0DRL+Mvdr37lr48JFFZBw=
+github.com/fyInALT/finality-gadget v0.0.0-20250211073944-76f1d08e9796/go.mod h1:hJzQM4qqigzCTPA+ffkPCmgd+8uV2QvvOUcsmr7Gzow=
 github.com/fyInALT/nitro-go-ethereum v0.0.0-20250210091941-ac7865601e20 h1:dRDaObPQwOd6XUH2M5Wg5noiqUsgIjeHdfspgBLr480=
 github.com/fyInALT/nitro-go-ethereum v0.0.0-20250210091941-ac7865601e20/go.mod h1:vavJimnovpuCPYPX64TV+VwXBScQ/KrVrU7MF/UDZ1w=
 github.com/gammazero/deque v0.2.1 h1:qSdsbG6pgp6nL7A0+K/B7s12mcCY/5l5SIUpMOl+dC0=

@@ -340,6 +340,7 @@ require (
 replace (
 	// use cosmos fork of keyring
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
+	github.com/babylonlabs-io/finality-gadget => github.com/fyInALT/finality-gadget v0.0.0-20250211073944-76f1d08e9796
 	github.com/crate-crypto/go-ipa => github.com/crate-crypto/go-ipa v0.0.0-20231025140028-3c0104f4b233
 	github.com/ethereum/go-ethereum => github.com/fyInALT/nitro-go-ethereum v0.0.0-20250210091941-ac7865601e20
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
