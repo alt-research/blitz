@@ -41,5 +41,6 @@ RUN apk add bash curl jq
 
 COPY --from=builder /go/src/github.com/alt-research/blitz/build/finality-gadget-operator /bin/finality-gadget-operator
 COPY --from=builder /go/src/github.com/alt-research/blitz/build/finality-gadget-signer /bin/finality-gadget-signer
+COPY --from=builder /go/src/github.com/alt-research/blitz/build/finality-gadget-rpc-services /bin/finality-gadget-rpc-services
 
 ENTRYPOINT [ "finality-gadget-operator" ]

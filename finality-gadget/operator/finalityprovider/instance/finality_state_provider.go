@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"strings"
 	"sync"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -19,10 +20,12 @@ import (
 	"github.com/babylonlabs-io/finality-gadget/finalitygadget"
 	"github.com/babylonlabs-io/finality-gadget/testutil/mocks"
 	"github.com/babylonlabs-io/finality-gadget/types"
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 )
 
 const FastCheckNumberCount uint64 = 256
+const CacheMapCount int = 4096
 
 type FinalizedStateProvider struct {
 	logger    *zap.Logger
@@ -33,6 +36,16 @@ type FinalizedStateProvider struct {
 
 	lastFinalizedHeight uint64
 	mu                  sync.Mutex
+
+	allFpsCache                     []string
+	allFpsCacheLastTime             time.Time
+	votedFpPksCache                 map[string][]string
+	finalizedCache                  map[uint64]bool
+	btcblockHeightCache             map[string]uint32
+	earliestActiveDelBtcHeightCache map[string]uint32
+	multiFpPowerCache               map[uint32]map[string]uint64
+	l2BlockCache                    map[uint64]*ethTypes.Block
+	cacheMu                         sync.RWMutex
 }
 
 func NewFinalizedStateProvider(
@@ -82,11 +95,17 @@ func NewFinalizedStateProvider(
 	}
 
 	return &FinalizedStateProvider{
-		logger:    logger,
-		l2Client:  l2Client,
-		btcClient: btcClient,
-		bbnClient: bbnClient,
-		cwClient:  cwClient,
+		logger:                          logger,
+		l2Client:                        l2Client,
+		btcClient:                       btcClient,
+		bbnClient:                       bbnClient,
+		cwClient:                        cwClient,
+		votedFpPksCache:                 make(map[string][]string, CacheMapCount),
+		finalizedCache:                  make(map[uint64]bool, CacheMapCount),
+		btcblockHeightCache:             make(map[string]uint32, CacheMapCount),
+		earliestActiveDelBtcHeightCache: make(map[string]uint32, CacheMapCount),
+		multiFpPowerCache:               make(map[uint32]map[string]uint64, CacheMapCount),
+		l2BlockCache:                    make(map[uint64]*ethTypes.Block, CacheMapCount),
 	}, nil
 }
 
@@ -153,8 +172,59 @@ func (p *FinalizedStateProvider) QueryFinalizedBlockInBabylon(ctx context.Contex
 	return res, err
 }
 
+func (p *FinalizedStateProvider) blockByNumber(ctx context.Context, number uint64) (*ethTypes.Block, error) {
+	res, useCache := func() (*ethTypes.Block, bool) {
+		p.cacheMu.RLock()
+		defer p.cacheMu.RUnlock()
+
+		c, ok := p.l2BlockCache[number]
+		if ok {
+			return c, true
+		}
+
+		return nil, false
+	}()
+
+	if useCache {
+		return res, nil
+	}
+
+	blk, err := p.l2Client.BlockByNumber(ctx, big.NewInt(int64(number)))
+	if err != nil {
+		return nil, errors.Wrapf(err, "QueryBlock failed: %v", number)
+	}
+
+	if err == nil {
+		func() {
+			p.cacheMu.Lock()
+			defer p.cacheMu.Unlock()
+
+			if len(p.l2BlockCache) > CacheMapCount {
+				p.l2BlockCache = make(map[uint64]*ethTypes.Block, CacheMapCount)
+			}
+
+			p.l2BlockCache[number] = blk
+		}()
+	}
+
+	return blk, err
+}
+
 func (p *FinalizedStateProvider) queryFinalizedBlockInBabylonByNumber(ctx context.Context, height uint64) (bool, error) {
-	blk, err := p.l2Client.BlockByNumber(ctx, big.NewInt(int64(height)))
+	useCache := func() bool {
+		p.cacheMu.RLock()
+		defer p.cacheMu.RUnlock()
+
+		_, ok := p.finalizedCache[height]
+
+		return ok
+	}()
+
+	if useCache {
+		return true, nil
+	}
+
+	blk, err := p.blockByNumber(ctx, height)
 	if err != nil {
 		return false, errors.Wrapf(err, "QueryBlock failed: %v", height)
 	}
@@ -166,6 +236,19 @@ func (p *FinalizedStateProvider) queryFinalizedBlockInBabylonByNumber(ctx contex
 	})
 	if err != nil {
 		return false, errors.Wrapf(err, "QueryIsBlockBabylonFinalizedFromBabylon failed: %v", height)
+	}
+
+	if isFinalized {
+		func() {
+			p.cacheMu.Lock()
+			defer p.cacheMu.Unlock()
+
+			if len(p.finalizedCache) > CacheMapCount {
+				p.finalizedCache = make(map[uint64]bool, CacheMapCount)
+			}
+
+			p.finalizedCache[height] = true
+		}()
 	}
 
 	p.logger.Sugar().Debug("queryFinalizedBlockInBabylonByNumber", "height", height, "finalized", isFinalized)
@@ -232,31 +315,8 @@ func (p *FinalizedStateProvider) QueryIsBlockBabylonFinalizedFromBabylon(block *
 	// trim prefix 0x for the L2 block hash
 	block.BlockHash = strings.TrimPrefix(block.BlockHash, "0x")
 
-	// get all FPs pubkey for the consumer chain
-	allFpPks, err := p.queryAllFpBtcPubKeys()
-	if err != nil {
-		return false, errors.Wrap(err, "queryAllFpBtcPubKeys")
-	}
-
-	// convert the L2 timestamp to BTC height
-	btcblockHeight, err := p.btcClient.GetBlockHeightByTimestamp(block.BlockTimestamp)
-	if err != nil {
-		return false, errors.Wrap(err, "GetBlockHeightByTimestamp")
-	}
-
-	p.logger.Sugar().Info("allFpPks", "allFpPks", allFpPks)
-
-	// check whether the btc staking is actived
-	earliestDelHeight, err := p.bbnClient.QueryEarliestActiveDelBtcHeight(allFpPks)
-	if err != nil {
-		return false, errors.Wrap(err, "QueryEarliestActiveDelBtcHeight")
-	}
-	if btcblockHeight < earliestDelHeight {
-		//return false, errors.Wrapf(types.ErrBtcStakingNotActivated, "current %v, earliest %v", btcblockHeight, earliestDelHeight)
-	}
-
 	// get all FPs voting power at this BTC height
-	allFpPower, err := p.bbnClient.QueryMultiFpPower(allFpPks, btcblockHeight)
+	allFpPower, err := p.queryAllPkPower(block)
 	if err != nil {
 		return false, errors.Wrap(err, "QueryMultiFpPower")
 	}
@@ -273,7 +333,7 @@ func (p *FinalizedStateProvider) QueryIsBlockBabylonFinalizedFromBabylon(block *
 	}
 
 	// get all FPs that voted this (L2 block height, L2 block hash) combination
-	votedFpPks, err := p.cwClient.QueryListOfVotedFinalityProviders(block)
+	votedFpPks, err := p.queryListOfVotedFinalityProviders(block)
 	if err != nil {
 		return false, errors.Wrap(err, "QueryListOfVotedFinalityProviders")
 	}
@@ -298,6 +358,21 @@ func (p *FinalizedStateProvider) QueryIsBlockBabylonFinalizedFromBabylon(block *
 }
 
 func (p *FinalizedStateProvider) queryAllFpBtcPubKeys() ([]string, error) {
+	res, useCache := func() ([]string, bool) {
+		p.cacheMu.RLock()
+		defer p.cacheMu.RUnlock()
+
+		if len(p.allFpsCache) > 0 && isTimeGreaterThan(p.allFpsCacheLastTime) {
+			return p.allFpsCache, true
+		}
+
+		return nil, false
+	}()
+
+	if useCache {
+		return res, nil
+	}
+
 	// get the consumer chain id
 	consumerId, err := p.cwClient.QueryConsumerId()
 	if err != nil {
@@ -309,5 +384,221 @@ func (p *FinalizedStateProvider) queryAllFpBtcPubKeys() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	func() {
+		p.cacheMu.Lock()
+		defer p.cacheMu.Unlock()
+
+		p.allFpsCache = allFpPks
+		p.allFpsCacheLastTime = time.Now()
+	}()
+
 	return allFpPks, nil
+}
+
+func (p *FinalizedStateProvider) queryListOfVotedFinalityProviders(queryParams *types.Block) ([]string, error) {
+	res, useCache := func() ([]string, bool) {
+		p.cacheMu.RLock()
+		defer p.cacheMu.RUnlock()
+
+		c, ok := p.votedFpPksCache[queryParams.BlockHash]
+		if ok {
+			return c, true
+		}
+
+		return nil, false
+	}()
+
+	if useCache {
+		return res, nil
+	}
+
+	votedFpPks, err := p.cwClient.QueryListOfVotedFinalityProviders(queryParams)
+
+	if err == nil {
+		func() {
+			p.cacheMu.Lock()
+			defer p.cacheMu.Unlock()
+
+			if len(p.votedFpPksCache) > CacheMapCount {
+				p.votedFpPksCache = make(map[string][]string, CacheMapCount)
+			}
+
+			p.votedFpPksCache[queryParams.BlockHash] = votedFpPks
+		}()
+	}
+
+	return votedFpPks, err
+}
+
+func (p *FinalizedStateProvider) getBlockHeightByTimestamp(block *types.Block) (uint32, error) {
+	res, useCache := func() (uint32, bool) {
+		p.cacheMu.RLock()
+		defer p.cacheMu.RUnlock()
+
+		c, ok := p.btcblockHeightCache[block.BlockHash]
+		if ok {
+			return c, true
+		}
+
+		return 0, false
+	}()
+
+	if useCache {
+		return res, nil
+	}
+
+	// convert the L2 timestamp to BTC height
+	btcblockHeight, err := p.btcClient.GetBlockHeightByTimestamp(block.BlockTimestamp)
+	if err != nil {
+		return 0, errors.Wrap(err, "GetBlockHeightByTimestamp")
+	}
+
+	if err == nil {
+		func() {
+			p.cacheMu.Lock()
+			defer p.cacheMu.Unlock()
+
+			if len(p.btcblockHeightCache) > CacheMapCount {
+				p.btcblockHeightCache = make(map[string]uint32, CacheMapCount)
+			}
+
+			p.btcblockHeightCache[block.BlockHash] = btcblockHeight
+		}()
+	}
+
+	return btcblockHeight, err
+
+}
+
+func (p *FinalizedStateProvider) queryEarliestActiveDelBtcHeight(fpPubkeyHexList []string) (uint32, error) {
+	key := strings.Join(fpPubkeyHexList, ",")
+
+	res, useCache := func() (uint32, bool) {
+		p.cacheMu.RLock()
+		defer p.cacheMu.RUnlock()
+
+		c, ok := p.earliestActiveDelBtcHeightCache[key]
+		if ok {
+			return c, true
+		}
+
+		return 0, false
+	}()
+
+	if useCache {
+		return res, nil
+	}
+
+	// check whether the btc staking is actived
+	earliestDelHeight, err := p.bbnClient.QueryEarliestActiveDelBtcHeight(fpPubkeyHexList)
+	if err != nil {
+		return 0, errors.Wrap(err, "QueryEarliestActiveDelBtcHeight")
+	}
+
+	if err == nil {
+		func() {
+			p.cacheMu.Lock()
+			defer p.cacheMu.Unlock()
+
+			if len(p.earliestActiveDelBtcHeightCache) > CacheMapCount {
+				p.earliestActiveDelBtcHeightCache = make(map[string]uint32, CacheMapCount)
+			}
+
+			p.earliestActiveDelBtcHeightCache[key] = earliestDelHeight
+		}()
+	}
+
+	return earliestDelHeight, err
+}
+
+func (p *FinalizedStateProvider) queryMultiFpPower(fpPubkeyHexList []string, btcHeight uint32) (map[string]uint64, error) {
+	res, useCache := func() (map[string]uint64, bool) {
+		p.cacheMu.RLock()
+		defer p.cacheMu.RUnlock()
+
+		c, ok := p.multiFpPowerCache[btcHeight]
+		if ok {
+			return c, true
+		}
+
+		return nil, false
+	}()
+
+	if useCache {
+		return res, nil
+	}
+
+	// get all FPs voting power at this BTC height
+	allFpPower, err := p.bbnClient.QueryMultiFpPower(fpPubkeyHexList, btcHeight)
+	if err != nil {
+		return nil, errors.Wrap(err, "QueryMultiFpPower")
+	}
+
+	if err == nil {
+		func() {
+			p.cacheMu.Lock()
+			defer p.cacheMu.Unlock()
+
+			if len(p.multiFpPowerCache) > CacheMapCount {
+				p.multiFpPowerCache = make(map[uint32]map[string]uint64, CacheMapCount)
+			}
+
+			p.multiFpPowerCache[btcHeight] = allFpPower
+		}()
+	}
+
+	return allFpPower, err
+}
+
+func (p *FinalizedStateProvider) queryAllPkPower(block *types.Block) (map[string]uint64, error) {
+	// get all FPs pubkey for the consumer chain
+	allFpPks, err := p.queryAllFpBtcPubKeys()
+	if err != nil {
+		return nil, errors.Wrap(err, "queryAllFpBtcPubKeys")
+	}
+
+	p.logger.Sugar().Info("allFpPks", "allFpPks", allFpPks)
+
+	// convert the L2 timestamp to BTC height
+	btcblockHeight, err := p.getBlockHeightByTimestamp(block)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetBlockHeightByTimestamp")
+	}
+
+	p.logger.Sugar().Info("btcblockHeight", "btcblockHeight", btcblockHeight)
+
+	// check whether the btc staking is actived
+	earliestDelHeight, err := p.queryEarliestActiveDelBtcHeight(allFpPks)
+	if err != nil {
+		return nil, errors.Wrap(err, "QueryEarliestActiveDelBtcHeight")
+	}
+
+	p.logger.Sugar().Info("earliestDelHeight", "earliestDelHeight", earliestDelHeight)
+
+	if btcblockHeight < earliestDelHeight {
+		//return nil, errors.Wrapf(types.ErrBtcStakingNotActivated, "current %v, earliest %v", btcblockHeight, earliestDelHeight)
+	}
+
+	// get all FPs voting power at this BTC height
+	allFpPower, err := p.queryMultiFpPower(allFpPks, btcblockHeight)
+	if err != nil {
+		return nil, errors.Wrap(err, "QueryMultiFpPower")
+	}
+
+	p.logger.Sugar().Info("allFpPower", "allFpPower", allFpPower)
+
+	return allFpPower, nil
+}
+
+func isTimeGreaterThan(inputTime time.Time) bool {
+	if inputTime.IsZero() {
+		return false
+	}
+
+	currentTime := time.Now()
+
+	duration := currentTime.Sub(inputTime)
+
+	return duration > 240*time.Second
 }
