@@ -106,6 +106,12 @@ pub enum ExecuteMsg {
     /// If reseted, the verifier can commit from activite height.
     /// JUST for TEST
     Reset {},
+    /// Set CommitBlockHeightInterval Config
+    ///
+    /// This value can let operator commit block height interval
+    SetCommitBlockHeightInterval {
+        commit_block_height_interval: u64,
+    },
 }
 
 #[cw_serde]
