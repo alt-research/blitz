@@ -1,5 +1,5 @@
 use crate::error::ContractError;
-use crate::exec::admin::{reset, set_enabled};
+use crate::exec::admin::{reset, set_commit_block_height_interval, set_enabled};
 use crate::exec::finality::{
     handle_finality_signature, handle_public_randomness_commit, handle_slashing,
 };
@@ -100,7 +100,10 @@ pub fn execute(
                 AdminError::Std(e) => ContractError::StdError(e),
                 AdminError::NotAdmin {} => ContractError::Unauthorized,
             }),
-        ExecuteMsg::Reset {  } => reset(deps, info),
+        ExecuteMsg::Reset {} => reset(deps, info),
+        ExecuteMsg::SetCommitBlockHeightInterval {
+            commit_block_height_interval,
+        } => return set_commit_block_height_interval(deps, info, commit_block_height_interval),
     }
 }
 
@@ -202,5 +205,70 @@ pub(crate) mod tests {
 
         // Use assert_admin to verify that the admin was updated correctly
         ADMIN.assert_admin(deps.as_ref(), &new_admin).unwrap();
+    }
+
+    #[test]
+    fn test_admin_set_commit_block_height_interval() {
+        let mut deps = mock_dependencies();
+        let init_admin = deps.api.addr_make(INIT_ADMIN);
+
+        let old_commit_block_height_interval = 5;
+        let new_commit_block_height_interval = 10;
+
+        // Create an InstantiateMsg with admin set to Some(INIT_ADMIN.into())
+        let instantiate_msg = InstantiateMsg {
+            admin: init_admin.to_string(), // Admin provided
+            consumer_id: "op-stack-l2-11155420".to_string(),
+            activated_height: 13513311,
+            commit_block_height_interval: old_commit_block_height_interval,
+            is_enabled: true,
+        };
+
+        let info = message_info(&deps.api.addr_make(CREATOR), &[]);
+
+        // Call the instantiate function
+        let res = instantiate(deps.as_mut(), mock_env(), info.clone(), instantiate_msg).unwrap();
+
+        // Assert that no messages were sent
+        assert_eq!(0, res.messages.len());
+
+        // Use assert_admin to verify that the admin was set correctly
+        let old_config = CONFIG
+            .load(deps.as_mut().storage)
+            .expect("load config should ok");
+        assert_eq!(
+            old_config.commit_block_height_interval,
+            old_commit_block_height_interval
+        );
+
+        let admin_msg = ExecuteMsg::SetCommitBlockHeightInterval {
+            commit_block_height_interval: new_commit_block_height_interval,
+        };
+
+        // Execute the UpdateAdmin message with non-admin info
+        let non_admin_info = message_info(&deps.api.addr_make("non_admin"), &[]);
+        let err = execute(
+            deps.as_mut(),
+            mock_env(),
+            non_admin_info,
+            admin_msg.clone(),
+        )
+        .unwrap_err();
+        assert_eq!(err, ContractError::Unauthorized);
+
+        // Execute the UpdateAdmin message with the initial admin info
+        let admin_info = message_info(&init_admin, &[]);
+        let res = execute(deps.as_mut(), mock_env(), admin_info, admin_msg).unwrap();
+
+        // Assert that no messages were sent
+        assert_eq!(0, res.messages.len());
+
+        let new_config = CONFIG
+            .load(deps.as_mut().storage)
+            .expect("load config should ok");
+        assert_eq!(
+            new_config.commit_block_height_interval,
+            new_commit_block_height_interval
+        );
     }
 }

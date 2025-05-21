@@ -3,8 +3,7 @@ use cosmwasm_std::{DepsMut, MessageInfo, Event, Response};
 
 use crate::{
     error::ContractError,
-    state::config::{ADMIN, IS_ENABLED},
-    state::finality::{SIGNATURES, BLOCK_HASHES, BLOCK_VOTES, EVIDENCES}
+    state::{config::{ADMIN, CONFIG, IS_ENABLED}, finality::{BLOCK_HASHES, BLOCK_VOTES, EVIDENCES, SIGNATURES}}
 };
 
 // Enable or disable the finality gadget.
@@ -57,6 +56,33 @@ pub fn reset(
 
     let res = Response::default()
         .add_event( Event::new("admin_reset"));
+
+    Result::Ok(res)
+}
+
+// Set Commit 
+pub fn set_commit_block_height_interval(
+    deps: DepsMut,
+    info: MessageInfo,
+    commit_block_height_interval: u64
+) -> Result<Response<BabylonMsg>, ContractError> {
+    // Check caller is admin
+    check_admin(&deps, info)?;
+
+    // Reset all storages
+    let mut config = CONFIG.load(deps.storage)?;
+    let old_commit_block_height_interval = config.commit_block_height_interval;
+    config.commit_block_height_interval = commit_block_height_interval;
+
+    CONFIG.save(deps.storage, &config)?;
+
+
+    let res = Response::default()
+        .add_event(
+             Event::new("admin_set_commit_block_height_interval").
+             add_attribute("old_commit_block_height_interval", old_commit_block_height_interval.to_string()).
+             add_attribute("commit_block_height_interval", commit_block_height_interval.to_string())
+        );
 
     Result::Ok(res)
 }
