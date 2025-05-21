@@ -1,5 +1,5 @@
 use crate::error::ContractError;
-use crate::exec::admin::{reset, set_enabled, set_commit_block_height_interval};
+use crate::exec::admin::{reset, set_commit_block_height_interval, set_enabled};
 use crate::exec::finality::{
     handle_finality_signature, handle_public_randomness_commit, handle_slashing,
 };
@@ -100,10 +100,10 @@ pub fn execute(
                 AdminError::Std(e) => ContractError::StdError(e),
                 AdminError::NotAdmin {} => ContractError::Unauthorized,
             }),
-        ExecuteMsg::Reset {  } => reset(deps, info),
-        ExecuteMsg::SetCommitBlockHeightInterval { commit_block_height_interval } => {
-            return set_commit_block_height_interval(deps, info, commit_block_height_interval)
-        }
+        ExecuteMsg::Reset {} => reset(deps, info),
+        ExecuteMsg::SetCommitBlockHeightInterval {
+            commit_block_height_interval,
+        } => return set_commit_block_height_interval(deps, info, commit_block_height_interval),
     }
 }
 
@@ -208,7 +208,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn test_update_admin_set_commit_block_height_interval() {
+    fn test_admin_set_commit_block_height_interval() {
         let mut deps = mock_dependencies();
         let init_admin = deps.api.addr_make(INIT_ADMIN);
 
@@ -233,8 +233,13 @@ pub(crate) mod tests {
         assert_eq!(0, res.messages.len());
 
         // Use assert_admin to verify that the admin was set correctly
-        let old_config = CONFIG.load(deps.as_mut().storage).expect("load config should ok");
-        assert_eq!(old_config.commit_block_height_interval, old_commit_block_height_interval);
+        let old_config = CONFIG
+            .load(deps.as_mut().storage)
+            .expect("load config should ok");
+        assert_eq!(
+            old_config.commit_block_height_interval,
+            old_commit_block_height_interval
+        );
 
         let admin_msg = ExecuteMsg::SetCommitBlockHeightInterval {
             commit_block_height_interval: new_commit_block_height_interval,
@@ -258,7 +263,12 @@ pub(crate) mod tests {
         // Assert that no messages were sent
         assert_eq!(0, res.messages.len());
 
-        let new_config = CONFIG.load(deps.as_mut().storage).expect("load config should ok");
-        assert_eq!(new_config.commit_block_height_interval, new_commit_block_height_interval);
+        let new_config = CONFIG
+            .load(deps.as_mut().storage)
+            .expect("load config should ok");
+        assert_eq!(
+            new_config.commit_block_height_interval,
+            new_commit_block_height_interval
+        );
     }
 }
