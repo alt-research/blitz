@@ -87,6 +87,7 @@ func NewFinalizedStateProvider(
 	}
 
 	// Create cosmwasm client
+	logger.Sugar().Infof("the fg contract address %s", cfg.Babylon.FinalityGadgetCfg.FGContractAddress)
 	cwClient := cwclient.NewCosmWasmClient(babylonClient.QueryClient.RPCClient, cfg.Babylon.FinalityGadgetCfg.FGContractAddress)
 
 	l2Client, err := l2eth.NewL2EthClient(ctx, &cfg.Layer2)
@@ -136,9 +137,20 @@ func (p *FinalizedStateProvider) QueryFinalizedBlockInBabylon(ctx context.Contex
 		fromBlockHeight = 1
 	}
 
+	if currentNumber == fromBlockHeight {
+		return currentNumber, nil
+	}
+
+	// from block height is the start search point
+	// mostly if there is no new block, we can just return it
+
+	// if last finalized block is too earlier, we can just use 256 block to try
 	if currentNumber > FastCheckNumberCount {
 		checkNumber := currentNumber - FastCheckNumberCount
 		if checkNumber > fromBlockHeight {
+			p.logger.Sugar().Debugf(
+				"try use a check number near the current header: %d, %d, %d",
+				fromBlockHeight, checkNumber, currentNumber)
 			isFinalized, err := p.queryFinalizedBlockInBabylonByNumber(ctx, checkNumber)
 			if err != nil {
 				return 0, errors.Wrapf(err, "queryFinalizedBlockInBabylonByNumber failed: %v", checkNumber)
@@ -150,8 +162,29 @@ func (p *FinalizedStateProvider) QueryFinalizedBlockInBabylon(ctx context.Contex
 		}
 	}
 
+	// mostly the currentNumber is the next block to last finality, so we can check it fast
+	nextFinality := fromBlockHeight + 1
+	if nextFinality == currentNumber {
+		p.logger.Sugar().Debugf(
+			"just check the current header by it is the next: %d, %d",
+			fromBlockHeight, currentNumber)
+		isFinalized, err := p.queryFinalizedBlockInBabylonByNumber(ctx, currentNumber)
+		if err != nil {
+			return 0, errors.Wrapf(err, "queryFinalizedBlockInBabylonByNumber failed: %v", currentNumber)
+		}
+
+		if isFinalized {
+			return currentNumber, nil
+		} else {
+			return fromBlockHeight, nil
+		}
+	}
+
+	// mostly it is no new finality block after last finality, so we can check next
 	tryEndBlockHeight := fromBlockHeight + 1
 	if tryEndBlockHeight < currentNumber {
+		p.logger.Sugar().Debugf("try use next finaliy block to check: %d, %d", tryEndBlockHeight, currentNumber)
+
 		isFinalized, err := p.queryFinalizedBlockInBabylonByNumber(ctx, tryEndBlockHeight)
 		if err != nil {
 			return 0, errors.Wrapf(err, "queryFinalizedBlockInBabylonByNumber failed: %v", tryEndBlockHeight)
@@ -221,6 +254,7 @@ func (p *FinalizedStateProvider) queryFinalizedBlockInBabylonByNumber(ctx contex
 	}()
 
 	if useCache {
+		p.logger.Sugar().Debugf("queryFinalizedBlockInBabylonByNumber final by cache: %d", height)
 		return true, nil
 	}
 
@@ -244,14 +278,17 @@ func (p *FinalizedStateProvider) queryFinalizedBlockInBabylonByNumber(ctx contex
 			defer p.cacheMu.Unlock()
 
 			if len(p.finalizedCache) > CacheMapCount {
+				p.logger.Sugar().Debugf("clean the finality cache to %d", CacheMapCount)
 				p.finalizedCache = make(map[uint64]bool, CacheMapCount)
 			}
+
+			p.logger.Sugar().Debugf("fill into the new finality cache %d", height)
 
 			p.finalizedCache[height] = true
 		}()
 	}
 
-	p.logger.Sugar().Debug("queryFinalizedBlockInBabylonByNumber", "height", height, "finalized", isFinalized)
+	p.logger.Sugar().Debugf("queryFinalizedBlockInBabylonByNumber: %d, %v", height, isFinalized)
 
 	return isFinalized, nil
 }
