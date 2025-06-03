@@ -73,13 +73,18 @@ type loggerHandler struct {
 
 func (h *loggerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	rpcId := h.id.Add(1)
-	h.logger.Sugar().Debug("handle http request", "id", rpcId)
+	h.logger.Sugar().Debugf("handle http request %d", rpcId)
 	h.next.ServeHTTP(w, r)
-	h.logger.Sugar().Debug("handle http returned", "id", rpcId)
+	h.logger.Sugar().Debugf("handle http returned %d", rpcId)
 }
 
 func (s *JsonRpcServer) StartServer(ctx context.Context, serverIpPortAddr string) {
-	s.logger.Sugar().Info("Start JSON RPC Server", "addr", serverIpPortAddr)
+	s.logger.Sugar().Infof("Start JSON RPC Server by %s", serverIpPortAddr)
+
+	// init the handler
+	if err := s.handler.init(ctx); err != nil {
+		s.logger.Sugar().Errorf("init handler failed by %s", err.Error())
+	}
 
 	rpcAPI := []gethrpc.API{s.GetAPI()}
 
@@ -102,7 +107,7 @@ func (s *JsonRpcServer) StartServer(ctx context.Context, serverIpPortAddr string
 	}
 
 	extapiURL := fmt.Sprintf("http://%v/", addr)
-	s.logger.Sugar().Info("HTTP endpoint opened", "url", extapiURL)
+	s.logger.Sugar().Info("HTTP endpoint opened %s", extapiURL)
 
 	serverErr := make(chan error, 1)
 
@@ -136,9 +141,17 @@ type JsonRpcHandler struct {
 	finalizedStateProvider *fp_instance.FinalizedStateProvider
 }
 
-type InitOperatorResponse struct {
-	Ok     bool   `json:"ok"`
-	Reason string `json:"reason"`
+func (h *JsonRpcHandler) init(ctx context.Context) error {
+	h.logger.Info("Start init json rpc handler")
+
+	finalized, err := h.finalizedStateProvider.QueryFinalizedBlockInBabylon(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to QueryFinalizedBlockInBabylon")
+	}
+
+	h.logger.Sugar().Info("Init json rpc handler success", "finalized", finalized)
+
+	return nil
 }
 
 func (h *JsonRpcHandler) GetBlockByNumber(
@@ -153,8 +166,8 @@ func (h *JsonRpcHandler) GetBlockByNumber(
 			return nil, err
 		}
 
-		h.logger.Sugar().Debugf("get block by number %v", number)
-		h.logger.Sugar().Debugf("get block resp %v", raw)
+		// h.logger.Sugar().Debugf("get block by number %v", number)
+		// h.logger.Sugar().Debugf("get block resp %v", raw)
 
 		return raw, nil
 	}
@@ -174,7 +187,7 @@ func (h *JsonRpcHandler) GetBlockByNumber(
 	}
 
 	h.logger.Sugar().Debugf("get block by number %v", number)
-	h.logger.Sugar().Debugf("get block resp %v", raw)
+	// h.logger.Sugar().Debugf("get block resp %v", raw)
 
 	return raw, nil
 }
