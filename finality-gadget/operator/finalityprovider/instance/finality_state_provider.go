@@ -144,6 +144,17 @@ func (p *FinalizedStateProvider) QueryFinalizedBlockInBabylon(ctx context.Contex
 	// from block height is the start search point
 	// mostly if there is no new block, we can just return it
 
+	// check current newest block
+	if currentNumber > 1 {
+		isFinalized, err := p.queryFinalizedBlockInBabylonByNumber(ctx, currentNumber-1)
+		if err == nil {
+			if isFinalized {
+				// The finalitzed block number can be the current number -1
+				return currentNumber - 1, nil
+			}
+		}
+	}
+
 	// if last finalized block is too earlier, we can just use 256 block to try
 	if currentNumber > FastCheckNumberCount {
 		checkNumber := currentNumber - FastCheckNumberCount
@@ -366,6 +377,7 @@ func (p *FinalizedStateProvider) QueryIsBlockBabylonFinalizedFromBabylon(block *
 
 	// no FP has voting power for the consumer chain
 	if totalPower == 0 {
+		p.logger.Sugar().Debugf("block not finalized by no totalPower for %v", block.BlockHeight)
 		return true, nil
 	}
 
@@ -463,6 +475,10 @@ func (p *FinalizedStateProvider) queryListOfVotedFinalityProviders(queryParams *
 
 			p.votedFpPksCache[queryParams.BlockHash] = votedFpPks
 		}()
+	}
+
+	if len(votedFpPks) == 0 {
+		p.logger.Sugar().Debugf("not found voted finality provider")
 	}
 
 	return votedFpPks, err
@@ -595,7 +611,7 @@ func (p *FinalizedStateProvider) queryAllPkPower(block *types.Block) (map[string
 		return nil, errors.Wrap(err, "queryAllFpBtcPubKeys")
 	}
 
-	p.logger.Sugar().Info("allFpPks", "allFpPks", allFpPks)
+	p.logger.Sugar().Infof("allFpPks %v", allFpPks)
 
 	// convert the L2 timestamp to BTC height
 	btcblockHeight, err := p.getBlockHeightByTimestamp(block)
@@ -603,7 +619,7 @@ func (p *FinalizedStateProvider) queryAllPkPower(block *types.Block) (map[string
 		return nil, errors.Wrap(err, "GetBlockHeightByTimestamp")
 	}
 
-	p.logger.Sugar().Info("btcblockHeight", "btcblockHeight", btcblockHeight)
+	p.logger.Sugar().Infof("btcblockHeight %v", btcblockHeight)
 
 	// check whether the btc staking is actived
 	earliestDelHeight, err := p.queryEarliestActiveDelBtcHeight(allFpPks)
@@ -611,7 +627,7 @@ func (p *FinalizedStateProvider) queryAllPkPower(block *types.Block) (map[string
 		return nil, errors.Wrap(err, "QueryEarliestActiveDelBtcHeight")
 	}
 
-	p.logger.Sugar().Info("earliestDelHeight", "earliestDelHeight", earliestDelHeight)
+	p.logger.Sugar().Info("earliestDelHeight %v", earliestDelHeight)
 
 	if btcblockHeight < earliestDelHeight {
 		//return nil, errors.Wrapf(types.ErrBtcStakingNotActivated, "current %v, earliest %v", btcblockHeight, earliestDelHeight)
@@ -623,7 +639,7 @@ func (p *FinalizedStateProvider) queryAllPkPower(block *types.Block) (map[string
 		return nil, errors.Wrap(err, "QueryMultiFpPower")
 	}
 
-	p.logger.Sugar().Info("allFpPower", "allFpPower", allFpPower)
+	p.logger.Sugar().Info("allFpPower %v", allFpPower)
 
 	return allFpPower, nil
 }
