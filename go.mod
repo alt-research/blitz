@@ -6,7 +6,7 @@ toolchain go1.23.6
 
 require (
 	cosmossdk.io/errors v1.0.1
-	github.com/CosmWasm/wasmd v0.53.2
+	github.com/CosmWasm/wasmd v0.53.3
 	github.com/avast/retry-go/v4 v4.6.0
 	github.com/babylonlabs-io/babylon v1.99.0-snapshot.250131
 	github.com/babylonlabs-io/finality-gadget v0.1.2-0.20250225043523-6b67aa59533b
