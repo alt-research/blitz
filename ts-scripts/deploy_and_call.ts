@@ -5,14 +5,13 @@ import 'dotenv/config';
 
 import * as fs from "fs";
 
-const rpcEndpoint = "https://rpc-euphrates.devnet.babylonlabs.io:443";
+const rpcEndpoint = "https://rpc.edge-devnet.babylonlabs.io:443";
 
 let mnemonic = process.env.BBN_DEPLOY_MNEMONIC || ""
 let address = process.env.BBN_DEPLOY_ADDRESS || ""
 
 console.log("use " + address)
 
-// Just for test account, can got from https://babylon-devnet.l2scan.co/faucet
 const alice = {
   mnemonic: mnemonic,
   address0: address,
@@ -21,7 +20,7 @@ const alice = {
 const admin = address
 
 async function main(hackatomWasmPath: string) {
-  const gasPrice = GasPrice.fromString("0.00001ubbn");
+  const gasPrice = GasPrice.fromString("0.002ubbn");
   const wallet = await DirectSecp256k1HdWallet.fromMnemonic(alice.mnemonic, {
     prefix: "bbn",
   });
@@ -46,18 +45,16 @@ async function main(hackatomWasmPath: string) {
   // This contract specific message is passed to the contract
   const msg = {
     admin: admin,
-    consumer_id: "test1",
-    activated_height: 10,
-    commit_block_height_interval: 1,
+    consumer_id: "dodo-testnet-53457",
     is_enabled: true
   };
   const { contractAddress, events } = await client.instantiate(
     alice.address0,
     uploadReceipt.codeId,
     msg,
-    "nitro_finality_gadget instance",
+    "nitro finality contract instance",
     instantiateFee,
-    { memo: `Create a instance` },
+    { memo: `Create a instance for nitro finality contract` },
   );
 
   console.info(JSON.stringify(events, null, 2));
@@ -66,6 +63,6 @@ async function main(hackatomWasmPath: string) {
 }
 
 const repoRoot = process.cwd();
-const hackatom = `${repoRoot}/target/wasm32-unknown-unknown/release/nitro_finality_gadget.wasm`;
-await main(hackatom);
+const code = `${repoRoot}/depends/rollup-bsn-contracts/artifacts/finality.wasm`;
+await main(code);
 console.info("The show is over.");
