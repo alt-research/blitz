@@ -6,11 +6,11 @@ toolchain go1.23.6
 
 require (
 	cosmossdk.io/errors v1.0.1
-	github.com/CosmWasm/wasmd v0.53.2
+	github.com/CosmWasm/wasmd v0.54.0
 	github.com/avast/retry-go/v4 v4.6.0
-	github.com/babylonlabs-io/babylon v1.99.0-snapshot.250131
+	github.com/babylonlabs-io/babylon v1.99.0-snapshot.250319
 	github.com/babylonlabs-io/finality-gadget v0.1.2-0.20250225043523-6b67aa59533b
-	github.com/babylonlabs-io/finality-provider v1.99.0-devnet.6.0.20250215020058-c94f61e3c810
+	github.com/babylonlabs-io/finality-provider v1.99.0-devnet.6.0.20250617092608-c9bd48839cde
 	github.com/btcsuite/btcd v0.24.2
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
@@ -274,6 +274,7 @@ require (
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
 	github.com/urfave/cli/v2 v2.25.7 // indirect
+	github.com/wealdtech/go-eth2-wallet-encryptor-keystorev4 v1.1.3 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect

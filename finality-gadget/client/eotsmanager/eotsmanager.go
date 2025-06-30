@@ -28,7 +28,7 @@ func (c *Config) WithEnv() {
 
 // Create eots manager client
 func NewEOTSManagerClient(logger *zap.Logger, cfg Config) (*EOTSManagerClient, error) {
-	cli, err := client.NewEOTSManagerGRpcClient(cfg.RemoteAddr)
+	cli, err := client.NewEOTSManagerGRpcClient(cfg.RemoteAddr, "")
 	if err != nil {
 		return nil, errors.Wrapf(err, "create eotsmanager client failed: %v", cfg.RemoteAddr)
 	}
@@ -73,6 +73,19 @@ func (e *EOTSManagerClient) UnsafeSignEOTS(uid []byte, chainID []byte, msg []byt
 // or passPhrase is incorrect
 func (e *EOTSManagerClient) SignSchnorrSig(uid []byte, msg []byte) (*schnorr.Signature, error) {
 	return e.inner.SignSchnorrSig(uid, msg)
+}
+
+// Unlock makes the private key for the given EOTS key (uid) accessible in memory using the provided keyring password.
+// After a successful call to Unlock, signing operations using this key will succeed.
+// This should be called during startup for `file`-based keyring, which requires explicit unlocking.
+func (e *EOTSManagerClient) Unlock(uid []byte, passphrase string) error {
+	return e.inner.Unlock(uid, passphrase)
+}
+
+// Backup performs a hot backup of the database using a read-only transaction, eotsd can be running
+// when this function is called, but writing to the db is blocked until the backup is done
+func (e *EOTSManagerClient) Backup(dbPath string, backupDir string) (string, error) {
+	return e.inner.Backup(dbPath, backupDir)
 }
 
 func (e *EOTSManagerClient) Close() error {

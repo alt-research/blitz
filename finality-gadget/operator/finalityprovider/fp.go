@@ -59,7 +59,18 @@ func (app *FinalityProviderApp) putFpFromResponse(fp *bstypes.FinalityProviderRe
 			if err != nil {
 				return fmt.Errorf("err converting fp addr: %w", err)
 			}
-			if err := app.fpManager.fps.CreateFinalityProvider(addr, btcPk, fp.Description, fp.Commission, chainID); err != nil {
+
+			if fp.Commission == nil {
+				return errors.New("nil Commission in FinalityProviderResponse")
+			}
+
+			if fp.CommissionInfo == nil {
+				return errors.New("nil CommissionInfo in FinalityProviderResponse")
+			}
+
+			commRates := bstypes.NewCommissionRates(*fp.Commission, fp.CommissionInfo.MaxRate, fp.CommissionInfo.MaxChangeRate)
+
+			if err := app.fpManager.fps.CreateFinalityProvider(addr, btcPk, fp.Description, commRates, chainID); err != nil {
 				return fmt.Errorf("failed to save finality-provider: %w", err)
 			}
 
