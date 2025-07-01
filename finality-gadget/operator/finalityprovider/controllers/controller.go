@@ -49,6 +49,8 @@ func NewOrbitConsumerController(
 	}
 	cwConfig := fpConfig.ToCosmwasmConfig()
 
+	zapLogger.Sugar().Debugw("cw config from fp config", "cw", cwConfig)
+
 	cwClient, err := opstackl2.NewCwClient(&cwConfig, zapLogger)
 	if err != nil {
 		return nil, errors.Errorf("failed to create CW client: %w", err)

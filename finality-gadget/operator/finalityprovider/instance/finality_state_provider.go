@@ -387,7 +387,7 @@ func (p *FinalizedStateProvider) QueryIsBlockBabylonFinalizedFromBabylon(block *
 		return false, errors.Wrap(err, "QueryListOfVotedFinalityProviders")
 	}
 	if votedFpPks == nil {
-		p.logger.Sugar().Debugf("votedFpPks nil")
+		p.logger.Sugar().Debugw("votedFpPks nil", "height", block.BlockHeight)
 		return false, nil
 	}
 	// calculate voted voting power
@@ -478,7 +478,7 @@ func (p *FinalizedStateProvider) queryListOfVotedFinalityProviders(queryParams *
 	}
 
 	if len(votedFpPks) == 0 {
-		p.logger.Sugar().Debugf("not found voted finality provider")
+		p.logger.Sugar().Debugw("not found voted finality provider", "block", queryParams.BlockHeight)
 	}
 
 	return votedFpPks, err
@@ -627,7 +627,7 @@ func (p *FinalizedStateProvider) queryAllPkPower(block *types.Block) (map[string
 		return nil, errors.Wrap(err, "QueryEarliestActiveDelBtcHeight")
 	}
 
-	p.logger.Sugar().Info("earliestDelHeight %v", earliestDelHeight)
+	p.logger.Sugar().Info("earliestDelHeight ", earliestDelHeight)
 
 	if btcblockHeight < earliestDelHeight {
 		//return nil, errors.Wrapf(types.ErrBtcStakingNotActivated, "current %v, earliest %v", btcblockHeight, earliestDelHeight)
@@ -639,7 +639,7 @@ func (p *FinalizedStateProvider) queryAllPkPower(block *types.Block) (map[string
 		return nil, errors.Wrap(err, "QueryMultiFpPower")
 	}
 
-	p.logger.Sugar().Info("allFpPower %v", allFpPower)
+	p.logger.Sugar().Info("allFpPower ", allFpPower)
 
 	return allFpPower, nil
 }
