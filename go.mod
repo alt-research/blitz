@@ -6,7 +6,7 @@ toolchain go1.23.6
 
 require (
 	cosmossdk.io/errors v1.0.1
-	github.com/CosmWasm/wasmd v0.54.0
+	github.com/CosmWasm/wasmd v0.54.1
 	github.com/avast/retry-go/v4 v4.6.0
 	github.com/babylonlabs-io/babylon v1.99.0-snapshot.250319
 	github.com/babylonlabs-io/finality-gadget v0.1.2-0.20250225043523-6b67aa59533b
@@ -54,7 +54,7 @@ require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // indirect
 	github.com/99designs/keyring v1.2.1 // indirect
-	github.com/CosmWasm/wasmvm/v2 v2.2.3 // indirect
+	github.com/CosmWasm/wasmvm/v2 v2.2.4 // indirect
 	github.com/DataDog/datadog-go v3.2.0+incompatible // indirect
 	github.com/DataDog/zstd v1.5.6 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
