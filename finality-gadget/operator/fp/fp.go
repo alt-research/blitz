@@ -1,4 +1,4 @@
-package finalityprovider
+package fp
 
 import (
 	"context"

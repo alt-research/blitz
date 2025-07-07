@@ -1,4 +1,4 @@
-package finalityprovider
+package fp
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 	"github.com/alt-research/blitz/finality-gadget/client/eotsmanager"
 	"github.com/alt-research/blitz/finality-gadget/metrics"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
-	"github.com/alt-research/blitz/finality-gadget/operator/finalityprovider/controllers"
+	"github.com/alt-research/blitz/finality-gadget/operator/fp/controllers"
 	"github.com/alt-research/blitz/finality-gadget/rpc"
 )
 
