@@ -279,11 +279,6 @@ func (fp *FinalityProviderInstance) finalitySigSubmissionLoop() {
 func (fp *FinalityProviderInstance) processBlocksToVote(blocks []*types.BlockInfo) ([]*types.BlockInfo, error) {
 	processedBlocks := make([]*types.BlockInfo, 0, len(blocks))
 
-	commitBlockHeightInterval, err := fp.cwClient.QueryCommitBlockHeightInterval(context.TODO())
-	if err != nil {
-		return nil, errors.Join(err, errors.New("QueryCommitBlockHeightInterval failed"))
-	}
-
 	var hasPower bool
 	for _, b := range blocks {
 		blk := *b
@@ -298,19 +293,8 @@ func (fp *FinalityProviderInstance) processBlocksToVote(blocks []*types.BlockInf
 			continue
 		}
 
-		if blk.Height%commitBlockHeightInterval != 0 {
-			fp.logger.Debug(
-				"the block height is not need commit by no commitBlockHeightInterval",
-				zap.String("pk", fp.GetBtcPkHex()),
-				zap.Uint64("block_height", blk.Height),
-				zap.Uint64("commitBlockHeightInterval", commitBlockHeightInterval),
-			)
-
-			continue
-		}
-
 		// check whether the finality provider has voting power
-		hasPower, err = fp.GetVotingPowerWithRetry(blk.Height)
+		hasPower, err := fp.GetVotingPowerWithRetry(blk.Height)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get voting power for height %d: %w", blk.Height, err)
 		}
