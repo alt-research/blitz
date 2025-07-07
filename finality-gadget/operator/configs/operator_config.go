@@ -22,8 +22,6 @@ type OperatorConfig struct {
 
 	// fp home root path create by fpd.
 	FinalityProviderHomePath string `yaml:"finalityProviderHomePath,omitempty"`
-	// fp_addr is the bech32 chain address identifier of the finality provider.
-	FpAddr string `yaml:"fp_addr,omitempty"`
 	// btc_pk is the BTC secp256k1 PK of the finality provider encoded in BIP-340 spec
 	BtcPk string `yaml:"btc_pk,omitempty"`
 }
@@ -37,7 +35,6 @@ func (c *OperatorConfig) WithEnv() {
 	c.MetricsConfig.WithEnv()
 
 	c.FinalityProviderHomePath = utils.LookupEnvStr("FINALITY_PROVIDER_HOME_PATH", c.FinalityProviderHomePath)
-	c.FpAddr = utils.LookupEnvStr("FINALITY_PROVIDER_ADDRESS", c.FpAddr)
 	c.BtcPk = utils.LookupEnvStr("FINALITY_PROVIDER_BTC_PK", c.BtcPk)
 
 }
