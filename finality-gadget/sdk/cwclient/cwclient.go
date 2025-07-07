@@ -94,10 +94,7 @@ func (cwClient *CosmWasmClient) QueryCommitBlockHeightInterval(ctx context.Conte
 		return 0, err
 	}
 
-	if data.CommitBlockHeightInterval == 0 {
-		return 1, nil
-	}
-	return data.CommitBlockHeightInterval, nil
+	return 1, nil
 }
 
 func (cwClient *CosmWasmClient) QueryIsEnabled(ctx context.Context) (bool, error) {
@@ -138,9 +135,7 @@ func createBlockVotersQueryData(queryParams *types.Block) ([]byte, error) {
 }
 
 type contractConfigResponse struct {
-	ConsumerId                string `json:"consumer_id"`
-	ActivatedHeight           uint64 `json:"activated_height"`
-	CommitBlockHeightInterval uint64 `json:"commit_block_height_interval"`
+	ConsumerId string `json:"consumer_id"`
 }
 type ContractQueryMsgs struct {
 	Config      *contractConfig   `json:"config,omitempty"`
