@@ -78,7 +78,6 @@ func NewOrbitConsumerController(
 		ctx:             ctx,
 		cwClient:        cwClient,
 		l2Client:        l2Client,
-		activeHeight:    cfg.Layer2.ActivatedHeight,
 		backHeightCount: cfg.Layer2.BackHeightCount,
 	}, nil
 }
@@ -290,7 +289,8 @@ func (wc *OrbitConsumerController) QueryLatestBlockHeight() (uint64, error) {
 // QueryActivatedHeight returns the activated height of the consumer chain
 // error will be returned if the consumer chain has not been activated
 func (wc *OrbitConsumerController) QueryActivatedHeight() (uint64, error) {
-	return wc.activeHeight, nil
+	// TODO: use common rollup fp
+	return 0, nil
 }
 
 // QueryFinalityProviderSlashedOrJailed - returns if the fp has been slashed, jailed, err

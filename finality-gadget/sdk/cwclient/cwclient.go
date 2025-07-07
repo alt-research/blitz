@@ -78,28 +78,6 @@ func (cwClient *CosmWasmClient) QueryConsumerId(ctx context.Context) (string, er
 	return data.ConsumerId, nil
 }
 
-func (cwClient *CosmWasmClient) QueryCommitBlockHeightInterval(ctx context.Context) (uint64, error) {
-	queryData, err := createConfigQueryData()
-	if err != nil {
-		return 0, err
-	}
-
-	resp, err := cwClient.querySmartContractState(ctx, queryData)
-	if err != nil {
-		return 0, err
-	}
-
-	var data contractConfigResponse
-	if err := json.Unmarshal(resp.Data, &data); err != nil {
-		return 0, err
-	}
-
-	if data.CommitBlockHeightInterval == 0 {
-		return 1, nil
-	}
-	return data.CommitBlockHeightInterval, nil
-}
-
 func (cwClient *CosmWasmClient) QueryIsEnabled(ctx context.Context) (bool, error) {
 	queryData, err := createIsEnabledQueryData()
 	if err != nil {
@@ -138,9 +116,7 @@ func createBlockVotersQueryData(queryParams *types.Block) ([]byte, error) {
 }
 
 type contractConfigResponse struct {
-	ConsumerId                string `json:"consumer_id"`
-	ActivatedHeight           uint64 `json:"activated_height"`
-	CommitBlockHeightInterval uint64 `json:"commit_block_height_interval"`
+	ConsumerId string `json:"consumer_id"`
 }
 type ContractQueryMsgs struct {
 	Config      *contractConfig   `json:"config,omitempty"`

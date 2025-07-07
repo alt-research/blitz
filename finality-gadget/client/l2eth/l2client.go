@@ -20,8 +20,6 @@ type Config struct {
 	EthRpcUrl string `yaml:"eth_rpc_url"`
 	// The chain id of l2
 	ChainId uint64 `yaml:"chain_id"`
-	// The activated_height
-	ActivatedHeight uint64 `yaml:"activated_height"`
 	// Back heights, will start service by this height
 	BackHeightCount uint64 `yaml:"back_height_count"`
 }
