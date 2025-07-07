@@ -1,4 +1,4 @@
-package fp_instance
+package provider
 
 import (
 	"context"

@@ -1,16 +1,12 @@
 package configs
 
 import (
-	"cosmossdk.io/errors"
 	"github.com/alt-research/blitz/finality-gadget/client/eotsmanager"
 	"github.com/alt-research/blitz/finality-gadget/client/l2eth"
 	"github.com/alt-research/blitz/finality-gadget/core/configs"
 	commonConfig "github.com/alt-research/blitz/finality-gadget/core/configs"
 	"github.com/alt-research/blitz/finality-gadget/core/utils"
 	"github.com/alt-research/blitz/finality-gadget/metrics"
-	"github.com/btcsuite/btcd/btcec/v2"
-	"github.com/btcsuite/btcd/btcec/v2/schnorr"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 type OperatorConfig struct {
@@ -37,18 +33,4 @@ func (c *OperatorConfig) WithEnv() {
 	c.FinalityProviderHomePath = utils.LookupEnvStr("FINALITY_PROVIDER_HOME_PATH", c.FinalityProviderHomePath)
 	c.BtcPk = utils.LookupEnvStr("FINALITY_PROVIDER_BTC_PK", c.BtcPk)
 
-}
-
-func (c *OperatorConfig) GetBtcPk() (*btcec.PublicKey, error) {
-	btcPkBytes, err := hexutil.Decode(c.BtcPk)
-	if err != nil {
-		return nil, errors.Wrapf(err, "invalid BTC public key hex string: %v", c.BtcPk)
-	}
-
-	btcPk, err := schnorr.ParsePubKey(btcPkBytes)
-	if err != nil {
-		return nil, errors.Wrapf(err, "invalid BTC public key: %s", c.BtcPk)
-	}
-
-	return btcPk, nil
 }

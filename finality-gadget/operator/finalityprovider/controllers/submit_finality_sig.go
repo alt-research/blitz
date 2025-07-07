@@ -72,7 +72,7 @@ func (wc *OrbitConsumerController) SubmitFinalitySig(
 	msg := ExecMsg{
 		SubmitFinalitySignature: &SubmitFinalitySignature{
 			FpPubkeyHex: bbntypes.NewBIP340PubKeyFromBTCPK(fpPk).MarshalHex(),
-			Height:      block.Height,
+			Height:      block.GetHeight(),
 			PubRand:     bbntypes.NewSchnorrPubRandFromFieldVal(pubRand).MustMarshal(),
 			Proof:       proofJSON,
 			BlockHash:   block.Hash,
@@ -144,7 +144,7 @@ func (wc *OrbitConsumerController) submitBatchFinalitySigs(
 		msg := ExecMsg{
 			SubmitFinalitySignature: &SubmitFinalitySignature{
 				FpPubkeyHex: bbntypes.NewBIP340PubKeyFromBTCPK(fpPk).MarshalHex(),
-				Height:      b.Height,
+				Height:      b.GetHeight(),
 				PubRand:     bbntypes.NewSchnorrPubRandFromFieldVal(pubRandList[i]).MustMarshal(),
 				Proof:       proofJSON,
 				BlockHash:   b.Hash,

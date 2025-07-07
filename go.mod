@@ -7,10 +7,9 @@ toolchain go1.23.6
 require (
 	cosmossdk.io/errors v1.0.1
 	github.com/CosmWasm/wasmd v0.54.0
-	github.com/avast/retry-go/v4 v4.6.0
 	github.com/babylonlabs-io/babylon v1.99.0-snapshot.250319
 	github.com/babylonlabs-io/finality-gadget v0.1.2-0.20250225043523-6b67aa59533b
-	github.com/babylonlabs-io/finality-provider v1.99.0-devnet.6.0.20250617092608-c9bd48839cde
+	github.com/babylonlabs-io/finality-provider v1.99.0-devnet.6.0.20250707142329-7d459d64c8a6
 	github.com/btcsuite/btcd v0.24.2
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
@@ -24,7 +23,6 @@ require (
 	github.com/prometheus/client_golang v1.20.5
 	github.com/rs/cors v1.11.1
 	github.com/urfave/cli v1.22.15
-	go.uber.org/atomic v1.10.0
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.70.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -61,6 +59,7 @@ require (
 	github.com/VictoriaMetrics/fastcache v1.12.2 // indirect
 	github.com/aead/siphash v1.0.1 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
+	github.com/avast/retry-go/v4 v4.6.0 // indirect
 	github.com/aws/aws-sdk-go v1.44.312 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d // indirect
@@ -299,6 +298,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.32.0 // indirect
 	go.opentelemetry.io/otel/trace v1.32.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
+	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/mock v0.4.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect

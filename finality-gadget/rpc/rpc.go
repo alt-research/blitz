@@ -17,7 +17,7 @@ import (
 
 	"github.com/alt-research/blitz/finality-gadget/client/l2eth"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
-	fp_instance "github.com/alt-research/blitz/finality-gadget/operator/finalityprovider/instance"
+	"github.com/alt-research/blitz/finality-gadget/rpc/provider"
 	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
 )
 
@@ -40,7 +40,7 @@ func NewJsonRpcServer(
 		return nil, errors.Wrap(err, "failed to create l2 eth client")
 	}
 
-	finalizedStateProvider, err := fp_instance.NewFinalizedStateProvider(ctx, cfg, logger)
+	finalizedStateProvider, err := provider.NewFinalizedStateProvider(ctx, cfg, logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create finalizedStateProvider")
 	}
@@ -138,7 +138,7 @@ func (s *JsonRpcServer) Wait() {
 type JsonRpcHandler struct {
 	logger                 *zap.Logger
 	ethClient              *l2eth.L2EthClient
-	finalizedStateProvider *fp_instance.FinalizedStateProvider
+	finalizedStateProvider *provider.FinalizedStateProvider
 }
 
 func (h *JsonRpcHandler) init(ctx context.Context) error {

@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 
-	bbn "github.com/babylonlabs-io/babylon/types"
 	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
 
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
@@ -60,13 +59,7 @@ func finalityProvider(cliCtx *cli.Context) error {
 		return errors.Wrap(err, "new provider failed")
 	}
 
-	pk, err := config.GetBtcPk()
-	if err != nil {
-		log.Fatalf("GetBtcPk failed by %v", err)
-		return err
-	}
-
-	err = app.Start(ctx, bbn.NewBIP340PubKeyFromBTCPK(pk))
+	err = app.Start(ctx, config.BtcPk)
 	if err != nil {
 		return errors.Wrap(err, "StartFinalityProviderInstance failed")
 	}
