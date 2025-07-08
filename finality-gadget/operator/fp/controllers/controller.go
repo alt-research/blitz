@@ -94,7 +94,7 @@ func (wc *OrbitConsumerController) CommitPubRandList(
 	numPubRand uint64,
 	commitment []byte,
 	sig *schnorr.Signature) (*types.TxResponse, error) {
-	wc.logger.Sugar().Debugf("CommitPubRandList %v %v", startHeight, wc.cwClient.MustGetAddr())
+	wc.logger.Sugar().Debugf("CommitPubRandList %v %v %v", startHeight, numPubRand, wc.cwClient.MustGetAddr())
 	msg := opstackl2.CommitPublicRandomnessMsg{
 		CommitPublicRandomness: opstackl2.CommitPublicRandomnessMsgParams{
 			FpPubkeyHex: bbntypes.NewBIP340PubKeyFromBTCPK(fpPk).MarshalHex(),

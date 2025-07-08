@@ -73,8 +73,6 @@ func newApp(ctx context.Context, config *configs.OperatorConfig, blitzMetrics *m
 		return nil, fmt.Errorf("failed to load configuration: %w", err)
 	}
 
-	fpConfig.NumPubRand = 1
-
 	zaplogger, err := logging.NewZapLoggerInner(logging.NewLogLevel(config.Common.Production))
 	if err != nil {
 		log.Fatalf("new logger failed by %v", err)
