@@ -6,7 +6,7 @@ toolchain go1.23.6
 
 require (
 	cosmossdk.io/errors v1.0.1
-	github.com/CosmWasm/wasmd v0.54.0
+	github.com/CosmWasm/wasmd v0.54.1
 	github.com/babylonlabs-io/babylon v1.99.0-snapshot.250319
 	github.com/babylonlabs-io/finality-gadget v0.1.2-0.20250225043523-6b67aa59533b
 	github.com/babylonlabs-io/finality-provider v1.99.0-devnet.6.0.20250707142329-7d459d64c8a6
@@ -21,10 +21,8 @@ require (
 	github.com/lightningnetwork/lnd/kvdb v1.4.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.20.5
-	github.com/rs/cors v1.11.1
 	github.com/urfave/cli v1.22.15
 	go.uber.org/zap v1.27.0
-	google.golang.org/grpc v1.70.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -52,7 +50,7 @@ require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // indirect
 	github.com/99designs/keyring v1.2.1 // indirect
-	github.com/CosmWasm/wasmvm/v2 v2.2.3 // indirect
+	github.com/CosmWasm/wasmvm/v2 v2.2.4 // indirect
 	github.com/DataDog/datadog-go v3.2.0+incompatible // indirect
 	github.com/DataDog/zstd v1.5.6 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
@@ -243,6 +241,7 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
+	github.com/rs/cors v1.11.1 // indirect
 	github.com/rs/zerolog v1.33.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
@@ -317,6 +316,7 @@ require (
 	google.golang.org/genproto v0.0.0-20240701130421-f6361c86f094 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241202173237-19429a94021a // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241202173237-19429a94021a // indirect
+	google.golang.org/grpc v1.70.0 // indirect
 	google.golang.org/protobuf v1.36.4 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
