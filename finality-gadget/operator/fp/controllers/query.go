@@ -20,8 +20,5 @@ func (wc *OrbitConsumerController) queryBlock(number rpc.BlockNumberOrHash) (*ty
 	block := blks[0]
 	blockHash := block.BlockHash
 
-	return &types.BlockInfo{
-		Height: block.BlockNumber.Uint64(),
-		Hash:   blockHash[:],
-	}, nil
+	return types.NewBlockInfo(block.BlockNumber.Uint64(), blockHash[:], false), nil
 }

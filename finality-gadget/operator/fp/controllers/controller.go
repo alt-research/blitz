@@ -94,7 +94,7 @@ func (wc *OrbitConsumerController) CommitPubRandList(
 	numPubRand uint64,
 	commitment []byte,
 	sig *schnorr.Signature) (*types.TxResponse, error) {
-	wc.logger.Sugar().Debugf("CommitPubRandList %v %v", startHeight, wc.cwClient.MustGetAddr())
+	wc.logger.Sugar().Debugf("CommitPubRandList %v %v %v", startHeight, numPubRand, wc.cwClient.MustGetAddr())
 	msg := opstackl2.CommitPublicRandomnessMsg{
 		CommitPublicRandomness: opstackl2.CommitPublicRandomnessMsgParams{
 			FpPubkeyHex: bbntypes.NewBIP340PubKeyFromBTCPK(fpPk).MarshalHex(),
@@ -222,7 +222,7 @@ func (wc *OrbitConsumerController) QueryIsBlockFinalized(height uint64) (bool, e
 	if l2Block == nil {
 		return false, nil
 	}
-	if height > l2Block.Height {
+	if height > l2Block.GetHeight() {
 		return false, nil
 	}
 	return true, nil
@@ -254,10 +254,7 @@ func (wc *OrbitConsumerController) QueryBlocks(startHeight, endHeight uint64, li
 
 		hash := header.Hash()
 
-		res = append(res, &types.BlockInfo{
-			Height: h.Uint64(),
-			Hash:   hash[:],
-		})
+		res = append(res, types.NewBlockInfo(h.Uint64(), hash[:], false))
 	}
 
 	return res, nil
@@ -274,7 +271,7 @@ func (wc *OrbitConsumerController) QueryLatestBlockHeight() (uint64, error) {
 		return 0, err
 	}
 
-	height := res.Height
+	height := res.GetHeight()
 	if height <= wc.backHeightCount {
 		height = 1
 	} else {

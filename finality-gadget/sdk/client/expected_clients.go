@@ -2,12 +2,10 @@ package finalitygadget
 
 import (
 	"context"
-	"math/big"
 
 	"github.com/babylonlabs-io/finality-gadget/types"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
-	eth "github.com/ethereum/go-ethereum/core/types"
 )
 
 type IBitcoinClient interface {
@@ -29,10 +27,4 @@ type ICosmWasmClient interface {
 	QueryListOfVotedFinalityProviders(ctx context.Context, queryParams *types.Block) ([]string, error)
 	QueryConsumerId(ctx context.Context) (string, error)
 	QueryIsEnabled(ctx context.Context) (bool, error)
-}
-
-type IEthL2Client interface {
-	HeaderByNumber(ctx context.Context, number *big.Int) (*eth.Header, error)
-	TransactionReceipt(ctx context.Context, txHash string) (*eth.Receipt, error)
-	Close()
 }
