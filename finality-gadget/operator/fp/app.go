@@ -26,8 +26,7 @@ import (
 )
 
 type FinalityProviderApp struct {
-	startOnce sync.Once
-	stopOnce  sync.Once
+	stopOnce sync.Once
 
 	quit chan struct{}
 
@@ -69,17 +68,20 @@ func NewFinalityProviderAppFromConfig(
 		return nil, errors.Wrap(err, "NewOrbitConsumerController failed")
 	}
 
-	// TODO: use a simple service
-	rpc, err := rpc.NewJsonRpcServer(ctx, logger, cfg, fpConfig)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create NewJsonRpcServer")
+	var rpcServer *rpc.JsonRpcServer
+
+	if cfg.Common.RpcServerIpPortAddress != "" {
+		rpcServer, err = rpc.NewJsonRpcServer(ctx, logger, cfg, fpConfig)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create NewJsonRpcServer")
+		}
 	}
 
 	return NewFinalityProviderApp(
 		ctx,
 		fpConfig, cc, consumerCon, em,
 		db, blitzMetrics,
-		rpc,
+		rpcServer,
 		cfg.Common.RpcServerIpPortAddress,
 		logger,
 	)
@@ -134,7 +136,7 @@ func (app *FinalityProviderApp) Start(ctx context.Context, fpPkStr string) error
 		return fmt.Errorf("failed to start the finality provider app: %w", err)
 	}
 
-	if app.jsonRpcServerIpPortAddr != "" {
+	if app.jsonRpcServerIpPortAddr != "" && app.rpc != nil {
 		app.wg.Add(1)
 		go func() {
 			defer func() {
