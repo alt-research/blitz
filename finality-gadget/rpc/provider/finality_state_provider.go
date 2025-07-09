@@ -203,8 +203,6 @@ func (p *FinalizedStateProvider) QueryFinalizedBlockInBabylon(ctx context.Contex
 
 		if isFinalized {
 			fromBlockHeight = tryEndBlockHeight
-		} else {
-			currentNumber = tryEndBlockHeight
 		}
 	}
 
