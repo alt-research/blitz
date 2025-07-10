@@ -409,7 +409,8 @@ func (p *FinalizedStateProvider) queryAllFpBtcPubKeys() ([]string, error) {
 		p.cacheMu.RLock()
 		defer p.cacheMu.RUnlock()
 
-		if len(p.allFpsCache) > 0 && isTimeGreaterThan(p.allFpsCacheLastTime) {
+		p.logger.Sugar().Debugw("check cache for all fp", "cache len", len(p.allFpsCache), "current", time.Now(), "cache", p.allFpsCacheLastTime)
+		if len(p.allFpsCache) > 0 && isTimeNotGreaterThan(p.allFpsCacheLastTime) {
 			return p.allFpsCache, true
 		}
 
@@ -417,6 +418,7 @@ func (p *FinalizedStateProvider) queryAllFpBtcPubKeys() ([]string, error) {
 	}()
 
 	if useCache {
+		p.logger.Sugar().Debugw("use cache for all fp btc keys", "res", res)
 		return res, nil
 	}
 
@@ -620,16 +622,16 @@ func (p *FinalizedStateProvider) queryAllPkPower(block *types.Block) (map[string
 	p.logger.Sugar().Infof("btcblockHeight %v", btcblockHeight)
 
 	// check whether the btc staking is actived
-	earliestDelHeight, err := p.queryEarliestActiveDelBtcHeight(allFpPks)
-	if err != nil {
-		return nil, errors.Wrap(err, "QueryEarliestActiveDelBtcHeight")
-	}
+	// earliestDelHeight, err := p.queryEarliestActiveDelBtcHeight(allFpPks)
+	// if err != nil {
+	//	return nil, errors.Wrap(err, "QueryEarliestActiveDelBtcHeight")
+	//}
 
-	p.logger.Sugar().Info("earliestDelHeight ", earliestDelHeight)
+	// p.logger.Sugar().Info("earliestDelHeight ", earliestDelHeight)
 
-	if btcblockHeight < earliestDelHeight {
-		//return nil, errors.Wrapf(types.ErrBtcStakingNotActivated, "current %v, earliest %v", btcblockHeight, earliestDelHeight)
-	}
+	// if btcblockHeight < earliestDelHeight {
+	//   return nil, errors.Wrapf(types.ErrBtcStakingNotActivated, "current %v, earliest %v", btcblockHeight, earliestDelHeight)
+	// }
 
 	// get all FPs voting power at this BTC height
 	allFpPower, err := p.queryMultiFpPower(allFpPks, btcblockHeight)
@@ -642,7 +644,7 @@ func (p *FinalizedStateProvider) queryAllPkPower(block *types.Block) (map[string
 	return allFpPower, nil
 }
 
-func isTimeGreaterThan(inputTime time.Time) bool {
+func isTimeNotGreaterThan(inputTime time.Time) bool {
 	if inputTime.IsZero() {
 		return false
 	}
@@ -651,5 +653,5 @@ func isTimeGreaterThan(inputTime time.Time) bool {
 
 	duration := currentTime.Sub(inputTime)
 
-	return duration > 240*time.Second
+	return duration <= 240*time.Second
 }
