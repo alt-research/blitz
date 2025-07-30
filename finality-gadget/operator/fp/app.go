@@ -9,13 +9,15 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/babylonlabs-io/babylon/types"
+	"github.com/babylonlabs-io/babylon/v3/types"
+	rollupfpcfg "github.com/babylonlabs-io/finality-provider/bsn/rollup/config"
 	fpcc "github.com/babylonlabs-io/finality-provider/clientcontroller"
 	ccapi "github.com/babylonlabs-io/finality-provider/clientcontroller/api"
 	fpeotsmanager "github.com/babylonlabs-io/finality-provider/eotsmanager"
 	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
 	"github.com/babylonlabs-io/finality-provider/finality-provider/proto"
 	"github.com/babylonlabs-io/finality-provider/finality-provider/service"
+	"github.com/babylonlabs-io/finality-provider/finality-provider/store"
 	fp_metrics "github.com/babylonlabs-io/finality-provider/metrics"
 
 	"github.com/alt-research/blitz/finality-gadget/client/eotsmanager"
@@ -45,7 +47,7 @@ type FinalityProviderApp struct {
 func NewFinalityProviderAppFromConfig(
 	ctx context.Context,
 	cfg *configs.OperatorConfig,
-	fpConfig *fpcfg.Config,
+	fpCfg *rollupfpcfg.RollupFPConfig,
 	db kvdb.Backend,
 	blitzMetrics *metrics.FpMetrics,
 	logger *zap.Logger,
@@ -56,13 +58,13 @@ func NewFinalityProviderAppFromConfig(
 		return nil, errors.Wrap(err, "NewEOTSManagerClient failed")
 	}
 
-	cc, err := fpcc.NewBabylonController(fpConfig, logger)
+	cc, err := fpcc.NewBabylonController(fpCfg.Common.BabylonConfig, logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewBabylonController failed")
 	}
 
 	consumerCon, err := controllers.NewOrbitConsumerController(
-		ctx, cfg, fpConfig.OPStackL2Config, logger,
+		ctx, cfg, fpCfg, logger,
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewOrbitConsumerController failed")
@@ -71,7 +73,7 @@ func NewFinalityProviderAppFromConfig(
 	var rpcServer *rpc.JsonRpcServer
 
 	if cfg.Common.RpcServerIpPortAddress != "" {
-		rpcServer, err = rpc.NewJsonRpcServer(ctx, logger, cfg, fpConfig)
+		rpcServer, err = rpc.NewJsonRpcServer(ctx, logger, cfg, fpCfg.Common)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create NewJsonRpcServer")
 		}
@@ -79,7 +81,7 @@ func NewFinalityProviderAppFromConfig(
 
 	return NewFinalityProviderApp(
 		ctx,
-		fpConfig, cc, consumerCon, em,
+		fpCfg.Common, cc, consumerCon, em,
 		db, blitzMetrics,
 		rpcServer,
 		cfg.Common.RpcServerIpPortAddress,
@@ -90,7 +92,7 @@ func NewFinalityProviderAppFromConfig(
 func NewFinalityProviderApp(
 	ctx context.Context,
 	config *fpcfg.Config,
-	cc ccapi.ClientController, // TODO: this should be renamed as client controller is always going to be babylon
+	cc ccapi.BabylonController,
 	consumerCon ccapi.ConsumerController,
 	em fpeotsmanager.EOTSManager,
 	db kvdb.Backend,
@@ -101,13 +103,40 @@ func NewFinalityProviderApp(
 ) (*FinalityProviderApp, error) {
 	fpMetrics := fp_metrics.NewFpMetrics()
 	poller := service.NewChainPoller(logger, config.PollerConfig, consumerCon, fpMetrics)
+	pubRandStore, err := store.NewPubRandProofStore(db)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initiate public randomness store: %w", err)
+	}
+
+	rndCommiter := service.NewDefaultRandomnessCommitter(
+		service.NewRandomnessCommitterConfig(config.NumPubRand, int64(config.TimestampingDelayBlocks), config.ContextSigningHeight),
+		service.NewPubRandState(pubRandStore),
+		consumerCon,
+		em,
+		logger,
+		fpMetrics,
+	)
+
+	heightDeterminer := service.NewStartHeightDeterminer(consumerCon, config.PollerConfig, logger)
+	fsCfg := service.NewDefaultFinalitySubmitterConfig(
+		config.MaxSubmissionRetries,
+		config.ContextSigningHeight,
+		config.SubmissionRetryInterval,
+	)
+	finalitySubmitter := service.NewDefaultFinalitySubmitter(consumerCon, em, rndCommiter.GetPubRandProofList, fsCfg, logger, fpMetrics)
+
 	fpApp, err := service.NewFinalityProviderApp(
 		config,
 		cc,
 		consumerCon,
 		em,
 		poller,
-		fpMetrics, db, logger)
+		rndCommiter,
+		heightDeterminer,
+		finalitySubmitter,
+		fpMetrics,
+		db,
+		logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create finality-provider manager: %w", err)
 	}
@@ -132,7 +161,7 @@ func (app *FinalityProviderApp) Start(ctx context.Context, fpPkStr string) error
 	// only start the app without starting any finality provider instance
 	// this is needed for new finality provider registration or unjailing
 	// finality providers
-	if err := app.fpApp.Start(); err != nil {
+	if err := app.fpApp.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start the finality provider app: %w", err)
 	}
 
@@ -156,7 +185,7 @@ func (app *FinalityProviderApp) Start(ctx context.Context, fpPkStr string) error
 			return fmt.Errorf("invalid finality provider public key %s: %w", fpPkStr, err)
 		}
 
-		if err := app.fpApp.StartFinalityProvider(fpPk); err != nil {
+		if err := app.fpApp.StartFinalityProvider(ctx, fpPk); err != nil {
 			return fmt.Errorf("failed to start by fpPkStr %s: %w", fpPkStr, err)
 		}
 	} else {
@@ -167,7 +196,7 @@ func (app *FinalityProviderApp) Start(ctx context.Context, fpPkStr string) error
 		}
 
 		if len(storedFps) == 1 {
-			if err := app.fpApp.StartFinalityProvider(types.NewBIP340PubKeyFromBTCPK(storedFps[0].BtcPk)); err != nil {
+			if err := app.fpApp.StartFinalityProvider(ctx, types.NewBIP340PubKeyFromBTCPK(storedFps[0].BtcPk)); err != nil {
 				return fmt.Errorf("failed to start by storedFps %s: %w", storedFps[0].BtcPk, err)
 			}
 		}
