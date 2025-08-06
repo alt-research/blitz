@@ -26,6 +26,7 @@ import (
 
 const FastCheckNumberCount uint64 = 256
 const CacheMapCount int = 4096
+const CleanCacheCount int = CacheMapCount / 3
 
 type FinalizedStateProvider struct {
 	logger    *zap.Logger
@@ -41,11 +42,13 @@ type FinalizedStateProvider struct {
 	allFpsCacheLastTime             time.Time
 	votedFpPksCache                 map[string][]string
 	finalizedCache                  map[uint64]bool
-	btcblockHeightCache             map[string]uint32
 	earliestActiveDelBtcHeightCache map[string]uint32
 	multiFpPowerCache               map[uint32]map[string]uint64
 	l2BlockCache                    map[uint64]*ethTypes.Block
 	cacheMu                         sync.RWMutex
+
+	fpPowerCache  *FpPowerCaches
+	allFpPksCache *FpBtcPubKeysCache
 }
 
 func NewFinalizedStateProvider(
@@ -95,6 +98,11 @@ func NewFinalizedStateProvider(
 		return nil, errors.Wrap(err, "failed to create l2 eth client")
 	}
 
+	allFpPksCache, err := NewFpBtcPubKeysCache(ctx, logger, 1*time.Second, 5*time.Second, bbnClient, cwClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create fp btc pub keys cache: %w", err)
+	}
+
 	return &FinalizedStateProvider{
 		logger:                          logger,
 		l2Client:                        l2Client,
@@ -103,10 +111,11 @@ func NewFinalizedStateProvider(
 		cwClient:                        cwClient,
 		votedFpPksCache:                 make(map[string][]string, CacheMapCount),
 		finalizedCache:                  make(map[uint64]bool, CacheMapCount),
-		btcblockHeightCache:             make(map[string]uint32, CacheMapCount),
 		earliestActiveDelBtcHeightCache: make(map[string]uint32, CacheMapCount),
 		multiFpPowerCache:               make(map[uint32]map[string]uint64, CacheMapCount),
 		l2BlockCache:                    make(map[uint64]*ethTypes.Block, CacheMapCount),
+		fpPowerCache:                    NewFpPowerCaches(ctx, logger, btcClient, 5*time.Second),
+		allFpPksCache:                   allFpPksCache,
 	}, nil
 }
 

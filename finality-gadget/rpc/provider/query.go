@@ -89,40 +89,10 @@ func (p *FinalizedStateProvider) queryListOfVotedFinalityProviders(queryParams *
 }
 
 func (p *FinalizedStateProvider) queryBlockHeightByTimestamp(block *types.Block) (uint32, error) {
-	res, useCache := func() (uint32, bool) {
-		p.cacheMu.RLock()
-		defer p.cacheMu.RUnlock()
-
-		c, ok := p.btcblockHeightCache[block.BlockHash]
-		if ok {
-			return c, true
-		}
-
-		return 0, false
-	}()
-
-	if useCache {
-		p.logger.Sugar().Debugw("use cache for block height", "block", block, "res", res)
-		return res, nil
-	}
-
 	// convert the L2 timestamp to BTC height
 	btcblockHeight, err := p.btcClient.GetBlockHeightByTimestamp(block.BlockTimestamp)
 	if err != nil {
 		return 0, errors.Wrap(err, "GetBlockHeightByTimestamp")
-	}
-
-	if err == nil {
-		func() {
-			p.cacheMu.Lock()
-			defer p.cacheMu.Unlock()
-
-			if len(p.btcblockHeightCache) > CacheMapCount {
-				p.btcblockHeightCache = make(map[string]uint32, CacheMapCount)
-			}
-
-			p.btcblockHeightCache[block.BlockHash] = btcblockHeight
-		}()
 	}
 
 	return btcblockHeight, err
@@ -213,7 +183,7 @@ func (p *FinalizedStateProvider) queryAllPkPower(block *types.Block) (map[string
 	p.logger.Sugar().Debugw("queryAllPkPower", "block", block.BlockTimestamp, "current", time.Now().Unix())
 
 	// get all FPs pubkey for the consumer chain
-	allFpPks, err := p.queryAllFpBtcPubKeys()
+	allFpPks, err := p.allFpPksCache.QueryAllFpBtcPubKeys()
 	if err != nil {
 		return nil, errors.Wrap(err, "queryAllFpBtcPubKeys")
 	}
@@ -247,6 +217,9 @@ func (p *FinalizedStateProvider) queryAllPkPower(block *types.Block) (map[string
 	}
 
 	p.logger.Sugar().Info("allFpPower ", allFpPower)
+
+	p.fpPowerCache.SetCache(block, btcblockHeight, allFpPower)
+	p.fpPowerCache.LogCacheStatus()
 
 	return allFpPower, nil
 }
