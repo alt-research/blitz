@@ -40,7 +40,7 @@ func fpsRestore(cliCtx *cli.Context) error {
 
 	zaplogger.Sugar().Infof("fp btc pk %v in %v", fpBtcPk, chainId)
 
-	app, err := newApp(ctx, &config, nil)
+	app, err := newApp(ctx, &config)
 	if err != nil {
 		return errors.Wrap(err, "new provider failed")
 	}
@@ -59,7 +59,7 @@ func fpsShow(cliCtx *cli.Context) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	app, err := newApp(ctx, &config, nil)
+	app, err := newApp(ctx, &config)
 	if err != nil {
 		return errors.Wrap(err, "new provider failed")
 	}

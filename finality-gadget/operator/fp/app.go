@@ -49,9 +49,9 @@ func NewFinalityProviderAppFromConfig(
 	cfg *configs.OperatorConfig,
 	fpCfg *rollupfpcfg.RollupFPConfig,
 	db kvdb.Backend,
-	blitzMetrics *metrics.FpMetrics,
 	logger *zap.Logger,
 ) (*FinalityProviderApp, error) {
+	blitzMetrics := metrics.NewFpMetrics()
 
 	em, err := eotsmanager.NewEOTSManagerClient(logger, cfg.EOTSManagerConfig)
 	if err != nil {
@@ -64,7 +64,7 @@ func NewFinalityProviderAppFromConfig(
 	}
 
 	consumerCon, err := controllers.NewOrbitConsumerController(
-		ctx, cfg, fpCfg, logger,
+		ctx, cfg, fpCfg, blitzMetrics, logger,
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewOrbitConsumerController failed")
