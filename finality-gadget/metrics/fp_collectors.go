@@ -10,6 +10,7 @@ type FpMetrics struct {
 	orbitFinalizedHeight        prometheus.Gauge
 	orbitBabylonFinalizedHeight prometheus.Gauge
 	fpCommittedHeight           prometheus.Gauge
+	fpBalances                  prometheus.Gauge
 }
 
 // Declare a package-level variable for sync.Once to ensure metrics are registered only once
