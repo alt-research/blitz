@@ -64,7 +64,7 @@ func NewFinalityProviderAppFromConfig(
 	}
 
 	consumerCon, err := controllers.NewOrbitConsumerController(
-		ctx, cfg, fpCfg, logger,
+		ctx, cfg, fpCfg, blitzMetrics, logger,
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewOrbitConsumerController failed")
