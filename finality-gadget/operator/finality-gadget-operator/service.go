@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 
-	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
+	rollupfpcfg "github.com/babylonlabs-io/finality-provider/bsn/rollup/config"
 
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
 	"github.com/alt-research/blitz/finality-gadget/core/utils"
@@ -68,7 +68,7 @@ func finalityProvider(cliCtx *cli.Context) error {
 }
 
 func newApp(ctx context.Context, config *configs.OperatorConfig, blitzMetrics *metrics.FpMetrics) (*fp.FinalityProviderApp, error) {
-	fpConfig, err := fpcfg.LoadConfig(config.FinalityProviderHomePath)
+	fpConfig, err := rollupfpcfg.LoadConfig(config.FinalityProviderHomePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load configuration: %w", err)
 	}
@@ -79,7 +79,7 @@ func newApp(ctx context.Context, config *configs.OperatorConfig, blitzMetrics *m
 		return nil, err
 	}
 
-	dbBackend, err := fpConfig.DatabaseConfig.GetDBBackend()
+	dbBackend, err := fpConfig.Common.DatabaseConfig.GetDBBackend()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create db backend: %w", err)
 	}

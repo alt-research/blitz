@@ -12,8 +12,8 @@ import (
 
 	"github.com/alt-research/blitz/finality-gadget/client/l2eth"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
-	bbnclient "github.com/babylonlabs-io/babylon/client/client"
-	bbncfg "github.com/babylonlabs-io/babylon/client/config"
+	bbnclient "github.com/babylonlabs-io/babylon/v3/client/client"
+	bbncfg "github.com/babylonlabs-io/babylon/v3/client/config"
 	fgbbnclient "github.com/babylonlabs-io/finality-gadget/bbnclient"
 	"github.com/babylonlabs-io/finality-gadget/btcclient"
 	"github.com/babylonlabs-io/finality-gadget/cwclient"

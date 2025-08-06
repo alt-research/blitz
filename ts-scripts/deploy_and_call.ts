@@ -45,8 +45,13 @@ async function main(hackatomWasmPath: string) {
   // This contract specific message is passed to the contract
   const msg = {
     admin: admin,
-    consumer_id: "dodo-testnet-53457",
-    is_enabled: true
+    bsn_id: "dodo-testnet-53457",
+    is_enabled: true,
+    min_pub_rand: 1000,
+    rate_limiting_interval: 10000,
+    max_msgs_per_interval: 10,
+    bsn_activation_height: 0,
+    finality_signature_interval: 1
   };
   const { contractAddress, events } = await client.instantiate(
     alice.address0,

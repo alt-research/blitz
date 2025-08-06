@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 
-	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
+	rollupfpcfg "github.com/babylonlabs-io/finality-provider/bsn/rollup/config"
 
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
 	"github.com/alt-research/blitz/finality-gadget/core/utils"
@@ -65,12 +65,10 @@ func rpcService(cliCtx *cli.Context) error {
 }
 
 func newApp(ctx context.Context, config *configs.OperatorConfig, blitzMetrics *metrics.FpMetrics) (*rpc.JsonRpcServer, error) {
-	fpConfig, err := fpcfg.LoadConfig(config.FinalityProviderHomePath)
+	fpConfig, err := rollupfpcfg.LoadConfig(config.FinalityProviderHomePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load configuration: %w", err)
 	}
-
-	fpConfig.NumPubRand = 1
 
 	zaplogger, err := logging.NewZapLoggerInner(logging.NewLogLevel(config.Common.Production))
 	if err != nil {
@@ -78,7 +76,7 @@ func newApp(ctx context.Context, config *configs.OperatorConfig, blitzMetrics *m
 		return nil, err
 	}
 
-	rpcApp, err := rpc.NewJsonRpcServer(ctx, zaplogger, config, fpConfig)
+	rpcApp, err := rpc.NewJsonRpcServer(ctx, zaplogger, config, fpConfig.Common)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create NewJsonRpcServer")
 	}

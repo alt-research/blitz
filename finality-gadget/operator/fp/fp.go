@@ -6,7 +6,8 @@ import (
 	"strings"
 
 	bbntypes "github.com/babylonlabs-io/babylon/types"
-	bstypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+	bstypes "github.com/babylonlabs-io/babylon/v3/x/btcstaking/types"
+	"github.com/babylonlabs-io/finality-provider/clientcontroller/api"
 	"github.com/babylonlabs-io/finality-provider/finality-provider/proto"
 	"github.com/babylonlabs-io/finality-provider/finality-provider/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -23,7 +24,7 @@ func (app *FinalityProviderApp) RestoreFP(ctx context.Context, keyName, chainID 
 	// Query the consumer chain to check if the fp is already registered
 	// if true, update db with the fp info from the consumer chain
 	// otherwise, proceed registration
-	resp, err := app.fpApp.GetBabylonController().QueryFinalityProvider(fpBtpPk.MustToBTCPK())
+	resp, err := app.fpApp.GetBabylonController().QueryFinalityProvider(ctx, fpBtpPk.MustToBTCPK())
 	if err != nil {
 		if !strings.Contains(err.Error(), "the finality provider is not found") {
 			return fmt.Errorf("err getting finality provider: %w", err)
@@ -36,7 +37,7 @@ func (app *FinalityProviderApp) RestoreFP(ctx context.Context, keyName, chainID 
 		return errors.Errorf("no found finality provider by %s", fpBtpPkStr)
 	}
 
-	if err := app.putFpFromResponse(resp.FinalityProvider, chainID); err != nil {
+	if err := app.putFpFromResponse(ctx, resp.FinalityProvider, chainID); err != nil {
 		return errors.Wrap(err, "putFpFromResponse failed")
 	}
 
@@ -50,7 +51,7 @@ func (app *FinalityProviderApp) RestoreFP(ctx context.Context, keyName, chainID 
 }
 
 // putFpFromResponse creates or updates finality-provider in the local store
-func (app *FinalityProviderApp) putFpFromResponse(fp *bstypes.FinalityProviderResponse, chainID string) error {
+func (app *FinalityProviderApp) putFpFromResponse(ctx context.Context, fp *bstypes.FinalityProviderResponse, chainID string) error {
 	btcPk := fp.BtcPk.MustToBTCPK()
 	_, err := app.fpApp.GetFinalityProviderStore().GetFinalityProvider(btcPk)
 	if err != nil {
@@ -93,7 +94,11 @@ func (app *FinalityProviderApp) putFpFromResponse(fp *bstypes.FinalityProviderRe
 		return err
 	}
 
-	hasPower, err := app.fpApp.GetConsumerController().QueryFinalityProviderHasPower(btcPk, fp.Height)
+	hasPower, err := app.fpApp.GetConsumerController().QueryFinalityProviderHasPower(
+		ctx, &api.QueryFinalityProviderHasPowerRequest{
+			FpPk:        btcPk,
+			BlockHeight: fp.Height,
+		})
 	if err != nil {
 		return fmt.Errorf("failed to query voting power for finality provider %s: %w",
 			fp.BtcPk.MarshalHex(), err)

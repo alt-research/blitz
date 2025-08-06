@@ -7,7 +7,7 @@
   "license": "MIT",
   "scripts": {
     "build": "bash ./scripts/build-contract.sh",
-    "test-deploy": "yarn build && yarn node ./node_modules/@cosmjs/cli/bin/cosmjs-cli --init ./ts-scripts/deploy_and_call.ts --code \"process.exit(0)\"",
+    "test-deploy": "yarn node ./node_modules/@cosmjs/cli/bin/cosmjs-cli --init ./ts-scripts/deploy_and_call.ts --code \"process.exit(0)\"",
     "test-reset": "yarn node ./node_modules/@cosmjs/cli/bin/cosmjs-cli --init ./ts-scripts/reset.ts --code \"process.exit(0)\"",
     "format": "prettier --write --log-level warn \"./src/**/*.ts\"",
     "format-script": "prettier --write --log-level warn \"./ts-scripts/**/*.ts\""
