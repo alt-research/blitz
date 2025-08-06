@@ -47,9 +47,9 @@ func NewFinalityProviderAppFromConfig(
 	cfg *configs.OperatorConfig,
 	fpConfig *fpcfg.Config,
 	db kvdb.Backend,
-	blitzMetrics *metrics.FpMetrics,
 	logger *zap.Logger,
 ) (*FinalityProviderApp, error) {
+	blitzMetrics := metrics.NewFpMetrics()
 
 	em, err := eotsmanager.NewEOTSManagerClient(logger, cfg.EOTSManagerConfig)
 	if err != nil {
