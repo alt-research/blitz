@@ -7,10 +7,7 @@ import (
 )
 
 type FpMetrics struct {
-	orbitFinalizedHeight        prometheus.Gauge
-	orbitBabylonFinalizedHeight prometheus.Gauge
-	fpCommittedHeight           prometheus.Gauge
-	fpBalances                  prometheus.Gauge
+	fpBabylonAddressBalances *prometheus.GaugeVec
 }
 
 // Declare a package-level variable for sync.Once to ensure metrics are registered only once
@@ -23,36 +20,18 @@ var fpMetricsInstance *FpMetrics
 func NewFpMetrics() *FpMetrics {
 	fpMetricsRegisterOnce.Do(func() {
 		fpMetricsInstance = &FpMetrics{
-			orbitFinalizedHeight: prometheus.NewGauge(prometheus.GaugeOpts{
-				Name: "orbit_finalized_height",
-				Help: "orbit finalized height by nodes",
-			}),
-			orbitBabylonFinalizedHeight: prometheus.NewGauge(prometheus.GaugeOpts{
-				Name: "orbit_babylon_finalized_height",
-				Help: "orbit finalized height by finality provider",
-			}),
-			fpCommittedHeight: prometheus.NewGauge(prometheus.GaugeOpts{
-				Name: "fp_committed_height",
-				Help: "The orbit height committed by fp",
-			}),
+			fpBabylonAddressBalances: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+				Name: "fp_babylon_address_balances",
+				Help: "Current Balance of a finality provider 's babylon address",
+			}, []string{"fp_address"}),
 		}
 
 		// Register the metrics with Prometheus
-		prometheus.MustRegister(fpMetricsInstance.orbitFinalizedHeight)
-		prometheus.MustRegister(fpMetricsInstance.orbitBabylonFinalizedHeight)
-		prometheus.MustRegister(fpMetricsInstance.fpCommittedHeight)
+		prometheus.MustRegister(fpMetricsInstance.fpBabylonAddressBalances)
 	})
 	return fpMetricsInstance
 }
 
-func (fm *FpMetrics) RecordCommittedHeight(fpBtcPkHex string, height uint64) {
-	fm.fpCommittedHeight.Set(float64(height))
-}
-
-func (fm *FpMetrics) RecordOrbitFinalizedHeight(fpBtcPkHex string, height uint64) {
-	fm.orbitFinalizedHeight.Set(float64(height))
-}
-
-func (fm *FpMetrics) RecordOrbitBabylonFinalizedHeight(fpBtcPkHex string, height uint64, Hash []byte) {
-	fm.orbitBabylonFinalizedHeight.Set(float64(height))
+func (fm *FpMetrics) RecordFpBalance(address string, balance float64) {
+	fm.fpBabylonAddressBalances.WithLabelValues(address).Set(balance)
 }

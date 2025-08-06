@@ -3,7 +3,10 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"math/big"
+	"sync"
+	"time"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -12,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	bbnclient "github.com/babylonlabs-io/babylon/client/client"
 	bbntypes "github.com/babylonlabs-io/babylon/types"
 	"github.com/babylonlabs-io/finality-gadget/db"
 	"github.com/babylonlabs-io/finality-provider/clientcontroller/api"
@@ -19,9 +23,12 @@ import (
 	cwcclient "github.com/babylonlabs-io/finality-provider/cosmwasmclient/client"
 	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
 	"github.com/babylonlabs-io/finality-provider/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"github.com/alt-research/blitz/finality-gadget/client/l2eth"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
+
+	"github.com/alt-research/blitz/finality-gadget/metrics"
 )
 
 var _ api.ConsumerController = &OrbitConsumerController{}
@@ -34,14 +41,20 @@ type OrbitConsumerController struct {
 	cwClient *cwcclient.Client
 	l2Client *l2eth.L2EthClient
 
+	blitzMetrics *metrics.FpMetrics
+	metricsMu    sync.Mutex
+
 	activeHeight    uint64
 	backHeightCount uint64
+
+	bbnClient *bbnclient.Client
 }
 
 func NewOrbitConsumerController(
 	ctx context.Context,
 	cfg *configs.OperatorConfig,
 	fpConfig *fpcfg.OPStackL2Config,
+	blitzMetrics *metrics.FpMetrics,
 	zapLogger *zap.Logger,
 ) (*OrbitConsumerController, error) {
 	if err := fpConfig.Validate(); err != nil {
@@ -61,6 +74,17 @@ func NewOrbitConsumerController(
 		return nil, errors.Wrap(err, "failed to create l2 eth client")
 	}
 
+	bbnConfig := fpConfig.ToBBNConfig()
+	babyCfg := fpcfg.BBNConfigToBabylonConfig(&bbnConfig)
+
+	bc, err := bbnclient.New(
+		&babyCfg,
+		zapLogger,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Babylon client: %w", err)
+	}
+
 	// Init local DB for storing and querying blocks
 	db, err := db.NewBBoltHandler(cfg.Babylon.FinalityGadgetCfg.DBFilePath, zapLogger)
 	if err != nil {
@@ -72,14 +96,36 @@ func NewOrbitConsumerController(
 		return nil, errors.Errorf("create initial buckets error: %w", err)
 	}
 
-	return &OrbitConsumerController{
+	res := &OrbitConsumerController{
 		cfg:             fpConfig,
 		logger:          zapLogger,
+		blitzMetrics:    blitzMetrics,
+		bbnClient:       bc,
 		ctx:             ctx,
 		cwClient:        cwClient,
 		l2Client:        l2Client,
 		backHeightCount: cfg.Layer2.BackHeightCount,
-	}, nil
+	}
+
+	go func() {
+		res.logger.Sugar().Info("Starting fp token metrics")
+
+		res.recordFpBalance(ctx)
+
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				res.logger.Debug("on recordAddressToken ticker")
+				res.recordFpBalance(ctx)
+			}
+		}
+	}()
+
+	return res, nil
 }
 
 func (wc *OrbitConsumerController) Ctx() context.Context {
@@ -118,6 +164,8 @@ func (wc *OrbitConsumerController) CommitPubRandList(
 	if err != nil {
 		return nil, err
 	}
+
+	wc.recordFpBalance(wc.Ctx())
 	return &types.TxResponse{TxHash: res.TxHash}, nil
 }
 
@@ -319,7 +367,60 @@ func (cc *OrbitConsumerController) UnjailFinalityProvider(fpPk *btcec.PublicKey)
 	return nil, nil
 }
 
+func (wc *OrbitConsumerController) recordFpBalance(ctxBase context.Context) {
+	go func() {
+		wc.metricsMu.Lock()
+		defer wc.metricsMu.Unlock()
+
+		ctx, cancel := context.WithTimeout(ctxBase, 8*time.Second)
+		defer cancel()
+
+		address, err := wc.bbnClient.GetAddr()
+		if err != nil {
+			wc.logger.Sugar().Errorw("recordFpBalance failed to get addr", "err", err)
+			return
+		}
+
+		balance, err := wc.queryBalance(ctx, address, "ubbn")
+		if err != nil {
+			wc.logger.Sugar().Errorw("recordFpBalance failed to get balance by addr", "addr", address, "err", err)
+		}
+
+		wc.logger.Sugar().Debugw("record fp balance", "addr", address, "balance", balance)
+		wc.blitzMetrics.RecordFpBalance(address, balance)
+	}()
+}
+
+// QueryBalances returns balances at the address.
+func (wc *OrbitConsumerController) queryBalance(ctx context.Context, address, denom string) (float64, error) {
+	req := banktypes.QueryBalanceRequest{
+		Address: address,
+		Denom:   denom,
+	}
+
+	data, err := req.Marshal()
+	if err != nil {
+		return 0, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	result, err := wc.bbnClient.RPCClient.ABCIQuery(ctx, "/cosmos.bank.v1beta1.Query/Balance", data)
+	if err != nil {
+		return 0, fmt.Errorf("failed to query balance: %w", err)
+	}
+
+	var balancesResp banktypes.QueryBalanceResponse
+	if err := balancesResp.Unmarshal(result.Response.Value); err != nil {
+		return 0, fmt.Errorf("failed to unmarshal balance response: %w", err)
+	}
+
+	// from ubbn to bbn
+	balanceUBBN := balancesResp.GetBalance().Amount.BigInt()
+	return float64(balanceUBBN.Uint64()) / 1000000, nil
+}
+
 func (wc *OrbitConsumerController) Close() error {
+	wc.logger.Sugar().Debugw("close OrbitConsumerController")
 	wc.l2Client.Close()
+
 	return wc.cwClient.Stop()
 }
