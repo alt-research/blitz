@@ -74,7 +74,7 @@ func (wc *OrbitConsumerController) CommitPubRandList(
 	wc.logger.Sugar().Debugf(
 		"CommitPubRandList %v %v",
 		req.StartHeight, req.NumPubRand)
-	return wc.RollupBSNController.CommitPubRandList(wc.ctx, &api.CommitPubRandListRequest{})
+	return wc.RollupBSNController.CommitPubRandList(wc.ctx, req)
 }
 
 // SubmitBatchFinalitySigs submits a batch of finality signatures to the consumer chain
