@@ -4,17 +4,16 @@ import (
 	"github.com/alt-research/blitz/finality-gadget/client/eotsmanager"
 	"github.com/alt-research/blitz/finality-gadget/client/l2eth"
 	"github.com/alt-research/blitz/finality-gadget/core/configs"
-	commonConfig "github.com/alt-research/blitz/finality-gadget/core/configs"
 	"github.com/alt-research/blitz/finality-gadget/core/utils"
 	"github.com/alt-research/blitz/finality-gadget/metrics"
 )
 
 type OperatorConfig struct {
-	Common            commonConfig.CommonConfig `yaml:"common,omitempty"`
-	Layer2            l2eth.Config              `yaml:"layer2,omitempty"`
-	Babylon           configs.BabylonConfig     `yaml:"babylon,omitempty"`
-	EOTSManagerConfig eotsmanager.Config        `yaml:"eotsManager,omitempty"`
-	MetricsConfig     metrics.Config            `yaml:"metrics,omitempty"`
+	Common            configs.CommonConfig  `yaml:"common,omitempty"`
+	Layer2            l2eth.Config          `yaml:"layer2,omitempty"`
+	Babylon           configs.BabylonConfig `yaml:"babylon,omitempty"`
+	EOTSManagerConfig eotsmanager.Config    `yaml:"eotsManager,omitempty"`
+	MetricsConfig     metrics.Config        `yaml:"metrics,omitempty"`
 
 	// fp home root path create by fpd.
 	FinalityProviderHomePath string `yaml:"finalityProviderHomePath,omitempty"`

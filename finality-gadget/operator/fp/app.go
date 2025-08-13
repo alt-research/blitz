@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/lightningnetwork/lnd/kvdb"
 	"github.com/pkg/errors"
@@ -196,8 +197,9 @@ func (app *FinalityProviderApp) Start(ctx context.Context, fpPkStr string) error
 		}
 
 		if len(storedFps) == 1 {
-			if err := app.fpApp.StartFinalityProvider(ctx, types.NewBIP340PubKeyFromBTCPK(storedFps[0].BtcPk)); err != nil {
-				return fmt.Errorf("failed to start by storedFps %s: %w", storedFps[0].BtcPk, err)
+			pk := types.NewBIP340PubKeyFromBTCPK(storedFps[0].BtcPk)
+			if err := app.fpApp.StartFinalityProvider(ctx, pk); err != nil {
+				return fmt.Errorf("failed to start by storedFps %s: %w", pk.MarshalHex(), err)
 			}
 		}
 
@@ -205,6 +207,9 @@ func (app *FinalityProviderApp) Start(ctx context.Context, fpPkStr string) error
 			return fmt.Errorf("%d finality providers found in DB. Please specify the EOTS public key", len(storedFps))
 		}
 	}
+
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
 
 	for {
 		select {
@@ -216,6 +221,8 @@ func (app *FinalityProviderApp) Start(ctx context.Context, fpPkStr string) error
 				return errors.Wrap(err, "stop failed")
 			}
 			return nil
+		case <-ticker.C:
+			app.logger.Debug("on app ticker")
 		}
 	}
 }

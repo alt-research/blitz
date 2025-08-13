@@ -9,11 +9,12 @@ import (
 	"strconv"
 	"syscall"
 
+	"github.com/urfave/cli"
+
 	"github.com/alt-research/blitz/finality-gadget/core/logging"
 	"github.com/alt-research/blitz/finality-gadget/core/utils"
 	"github.com/alt-research/blitz/finality-gadget/operator/configs"
-	"github.com/pkg/errors"
-	"github.com/urfave/cli"
+	"github.com/alt-research/blitz/finality-gadget/operator/fp"
 )
 
 func fpsRestore(cliCtx *cli.Context) error {
@@ -27,7 +28,7 @@ func fpsRestore(cliCtx *cli.Context) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	zaplogger, err := logging.NewZapLoggerInner(logging.NewLogLevel(config.Common.Production))
+	zapLogger, err := logging.NewZapLoggerInner(logging.NewLogLevel(config.Common.Production))
 	if err != nil {
 		log.Fatalf("new logger failed by %v", err)
 		return err
@@ -38,11 +39,16 @@ func fpsRestore(cliCtx *cli.Context) error {
 
 	chainId := config.Layer2.ChainId
 
-	zaplogger.Sugar().Infof("fp btc pk %v in %v", fpBtcPk, chainId)
+	zapLogger.Sugar().Infof("fp btc pk %v in %v", fpBtcPk, chainId)
 
-	app, err := newApp(ctx, &config)
+	fpConfig, dbBackend, err := newAppParams(ctx, &config)
 	if err != nil {
-		return errors.Wrap(err, "new provider failed")
+		return fmt.Errorf("failed to create params for app: %w", err)
+	}
+
+	app, err := fp.NewFpsCmdProvider(fpConfig.Common, dbBackend, zapLogger)
+	if err != nil {
+		return fmt.Errorf("failed to create cmd provider: %w", err)
 	}
 
 	return app.RestoreFP(ctx, keyName, strconv.Itoa(int(chainId)), fpBtcPk)
@@ -59,14 +65,25 @@ func fpsShow(cliCtx *cli.Context) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	app, err := newApp(ctx, &config)
+	zapLogger, err := logging.NewZapLoggerInner(logging.NewLogLevel(config.Common.Production))
 	if err != nil {
-		return errors.Wrap(err, "new provider failed")
+		log.Fatalf("new logger failed by %v", err)
+		return err
 	}
 
-	storedFps, err := app.GetAllStoredFinalityProviders()
+	fpConfig, dbBackend, err := newAppParams(ctx, &config)
 	if err != nil {
-		return errors.Wrap(err, "GetAllStoredFinalityProviders failed")
+		return fmt.Errorf("failed to create params for app: %w", err)
+	}
+
+	app, err := fp.NewFpsCmdProvider(fpConfig.Common, dbBackend, zapLogger)
+	if err != nil {
+		return fmt.Errorf("failed to create cmd provider: %w", err)
+	}
+
+	storedFps, err := app.ListAllFinalityProvidersInfo()
+	if err != nil {
+		return fmt.Errorf("failed to GetAllStoredFinalityProviders: %w", err)
 	}
 
 	for _, sfp := range storedFps {
