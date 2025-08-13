@@ -71,7 +71,12 @@ func NewOrbitConsumerController(
 	if err != nil {
 		return nil, errors.Errorf("failed to create DB handler: %w", err)
 	}
-	defer db.Close()
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			zapLogger.Sugar().Errorf("failed to close db: %v", err)
+		}
+	}()
 	err = db.CreateInitialSchema()
 	if err != nil {
 		return nil, errors.Errorf("create initial buckets error: %w", err)

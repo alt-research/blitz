@@ -54,6 +54,7 @@ build-docker:
 
 .PHONY: lint
 lint:
+	staticcheck ./...
 	golangci-lint run
 
 .PHONY: test

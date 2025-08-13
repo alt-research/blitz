@@ -10,7 +10,6 @@ import (
 
 	"github.com/carlmjohnson/versioninfo"
 	"github.com/lightningnetwork/lnd/kvdb"
-	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 
 	rollupfpcfg "github.com/babylonlabs-io/finality-provider/bsn/rollup/config"
@@ -57,12 +56,12 @@ func finalityProvider(cliCtx *cli.Context) error {
 
 	app, err := newApp(ctx, &config)
 	if err != nil {
-		return errors.Wrap(err, "new provider failed")
+		return fmt.Errorf("failed to create NewFinalityProviderAppFromConfig for app: %w", err)
 	}
 
 	err = app.Start(ctx, config.BtcPk)
 	if err != nil {
-		return errors.Wrap(err, "StartFinalityProviderInstance failed")
+		return fmt.Errorf("failed to create Start for app: %w", err)
 	}
 
 	return nil
@@ -76,10 +75,13 @@ func newApp(ctx context.Context, config *configs.OperatorConfig) (*fp.FinalityPr
 	}
 
 	fpConfig, dbBackend, err := newAppParams(ctx, config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create params for app: %w", err)
+	}
 
 	app, err := fp.NewFinalityProviderAppFromConfig(ctx, config, fpConfig, dbBackend, zaplogger)
 	if err != nil {
-		return nil, errors.Wrap(err, "new provider failed")
+		return nil, fmt.Errorf("failed to create NewFinalityProviderAppFromConfig for app: %w", err)
 	}
 
 	return app, nil
