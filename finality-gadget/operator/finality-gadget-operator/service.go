@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/carlmjohnson/versioninfo"
+	"github.com/lightningnetwork/lnd/kvdb"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 
@@ -68,21 +69,13 @@ func finalityProvider(cliCtx *cli.Context) error {
 }
 
 func newApp(ctx context.Context, config *configs.OperatorConfig) (*fp.FinalityProviderApp, error) {
-	fpConfig, err := rollupfpcfg.LoadConfig(config.FinalityProviderHomePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load configuration: %w", err)
-	}
-
 	zaplogger, err := logging.NewZapLoggerInner(logging.NewLogLevel(config.Common.Production))
 	if err != nil {
 		log.Fatalf("new logger failed by %v", err)
 		return nil, err
 	}
 
-	dbBackend, err := fpConfig.Common.DatabaseConfig.GetDBBackend()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create db backend: %w", err)
-	}
+	fpConfig, dbBackend, err := newAppParams(ctx, config)
 
 	app, err := fp.NewFinalityProviderAppFromConfig(ctx, config, fpConfig, dbBackend, zaplogger)
 	if err != nil {
@@ -90,4 +83,18 @@ func newApp(ctx context.Context, config *configs.OperatorConfig) (*fp.FinalityPr
 	}
 
 	return app, nil
+}
+
+func newAppParams(ctx context.Context, config *configs.OperatorConfig) (*rollupfpcfg.RollupFPConfig, kvdb.Backend, error) {
+	fpConfig, err := rollupfpcfg.LoadConfig(config.FinalityProviderHomePath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	dbBackend, err := fpConfig.Common.DatabaseConfig.GetDBBackend()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create db backend: %w", err)
+	}
+
+	return fpConfig, dbBackend, nil
 }

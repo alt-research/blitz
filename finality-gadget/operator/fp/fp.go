@@ -7,15 +7,74 @@ import (
 
 	bbntypes "github.com/babylonlabs-io/babylon/types"
 	bstypes "github.com/babylonlabs-io/babylon/v3/x/btcstaking/types"
+	fpcc "github.com/babylonlabs-io/finality-provider/clientcontroller"
 	"github.com/babylonlabs-io/finality-provider/clientcontroller/api"
+	ccapi "github.com/babylonlabs-io/finality-provider/clientcontroller/api"
+	"github.com/babylonlabs-io/finality-provider/clientcontroller/babylon"
+	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
 	"github.com/babylonlabs-io/finality-provider/finality-provider/proto"
 	"github.com/babylonlabs-io/finality-provider/finality-provider/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/lightningnetwork/lnd/kvdb"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
-func (app *FinalityProviderApp) RestoreFP(ctx context.Context, keyName, chainID string, fpBtpPkStr string) error {
+type fpsCmdProvider struct {
+	logger *zap.Logger
+
+	cc          ccapi.BabylonController
+	consumerCon ccapi.ConsumerController
+	fps         *store.FinalityProviderStore
+}
+
+func NewFpsCmdProvider(
+	cfg *fpcfg.Config,
+	db kvdb.Backend,
+	logger *zap.Logger,
+) (*fpsCmdProvider, error) {
+	cc, err := fpcc.NewBabylonController(cfg.BabylonConfig, logger)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create rpc client for the Babylon chain: %w", err)
+	}
+	if err := cc.Start(); err != nil {
+		return nil, fmt.Errorf("failed to start rpc client for the Babylon chain: %w", err)
+	}
+
+	consumerCon, err := babylon.NewBabylonConsumerController(cfg.BabylonConfig, logger)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create rpc client for the consumer chain babylon: %w", err)
+	}
+
+	fpStore, err := store.NewFinalityProviderStore(db)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initiate finality provider store: %w", err)
+	}
+
+	return &fpsCmdProvider{
+		logger:      logger,
+		cc:          cc,
+		consumerCon: consumerCon,
+		fps:         fpStore,
+	}, nil
+}
+
+func (app *fpsCmdProvider) ListAllFinalityProvidersInfo() ([]*proto.FinalityProviderInfo, error) {
+	storedFps, err := app.fps.GetAllStoredFinalityProviders()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all stored finality providers: %w", err)
+	}
+
+	fpsInfo := make([]*proto.FinalityProviderInfo, 0, len(storedFps))
+	for _, fp := range storedFps {
+		fpInfo := fp.ToFinalityProviderInfo()
+		fpsInfo = append(fpsInfo, fpInfo)
+	}
+
+	return fpsInfo, nil
+}
+
+func (app *fpsCmdProvider) RestoreFP(ctx context.Context, keyName, chainID string, fpBtpPkStr string) error {
 	fpBtpPk, err := bbntypes.NewBIP340PubKeyFromHex(fpBtpPkStr)
 	if err != nil {
 		return errors.Wrapf(err, "failed to NewBIP340PubKeyFromHex by %v", fpBtpPk)
@@ -24,7 +83,7 @@ func (app *FinalityProviderApp) RestoreFP(ctx context.Context, keyName, chainID 
 	// Query the consumer chain to check if the fp is already registered
 	// if true, update db with the fp info from the consumer chain
 	// otherwise, proceed registration
-	resp, err := app.fpApp.GetBabylonController().QueryFinalityProvider(ctx, fpBtpPk.MustToBTCPK())
+	resp, err := app.cc.QueryFinalityProvider(ctx, fpBtpPk.MustToBTCPK())
 	if err != nil {
 		if !strings.Contains(err.Error(), "the finality provider is not found") {
 			return fmt.Errorf("err getting finality provider: %w", err)
@@ -42,7 +101,7 @@ func (app *FinalityProviderApp) RestoreFP(ctx context.Context, keyName, chainID 
 	}
 
 	// get updated fp from db
-	_, err = app.fpApp.GetFinalityProviderStore().GetFinalityProvider(fpBtpPk.MustToBTCPK())
+	_, err = app.fps.GetFinalityProvider(fpBtpPk.MustToBTCPK())
 	if err != nil {
 		return errors.Wrap(err, "GetFinalityProvider failed")
 	}
@@ -51,9 +110,9 @@ func (app *FinalityProviderApp) RestoreFP(ctx context.Context, keyName, chainID 
 }
 
 // putFpFromResponse creates or updates finality-provider in the local store
-func (app *FinalityProviderApp) putFpFromResponse(ctx context.Context, fp *bstypes.FinalityProviderResponse, chainID string) error {
+func (app *fpsCmdProvider) putFpFromResponse(ctx context.Context, fp *bstypes.FinalityProviderResponse, chainID string) error {
 	btcPk := fp.BtcPk.MustToBTCPK()
-	_, err := app.fpApp.GetFinalityProviderStore().GetFinalityProvider(btcPk)
+	_, err := app.fps.GetFinalityProvider(btcPk)
 	if err != nil {
 		if errors.Is(err, store.ErrFinalityProviderNotFound) {
 			addr, err := sdk.AccAddressFromBech32(fp.Addr)
@@ -71,7 +130,7 @@ func (app *FinalityProviderApp) putFpFromResponse(ctx context.Context, fp *bstyp
 
 			commRates := bstypes.NewCommissionRates(*fp.Commission, fp.CommissionInfo.MaxRate, fp.CommissionInfo.MaxChangeRate)
 
-			if err := app.fpApp.GetFinalityProviderStore().CreateFinalityProvider(addr, btcPk, fp.Description, commRates, chainID); err != nil {
+			if err := app.fps.CreateFinalityProvider(addr, btcPk, fp.Description, commRates, chainID); err != nil {
 				return fmt.Errorf("failed to save finality-provider: %w", err)
 			}
 
@@ -86,15 +145,15 @@ func (app *FinalityProviderApp) putFpFromResponse(ctx context.Context, fp *bstyp
 		return err
 	}
 
-	if err := app.fpApp.GetFinalityProviderStore().SetFpDescription(btcPk, fp.Description, fp.Commission); err != nil {
+	if err := app.fps.SetFpDescription(btcPk, fp.Description, fp.Commission); err != nil {
 		return err
 	}
 
-	if err := app.fpApp.GetFinalityProviderStore().SetFpLastVotedHeight(btcPk, uint64(fp.HighestVotedHeight)); err != nil {
+	if err := app.fps.SetFpLastVotedHeight(btcPk, uint64(fp.HighestVotedHeight)); err != nil {
 		return err
 	}
 
-	hasPower, err := app.fpApp.GetConsumerController().QueryFinalityProviderHasPower(
+	hasPower, err := app.consumerCon.QueryFinalityProviderHasPower(
 		ctx, &api.QueryFinalityProviderHasPowerRequest{
 			FpPk:        btcPk,
 			BlockHeight: fp.Height,
@@ -116,7 +175,7 @@ func (app *FinalityProviderApp) putFpFromResponse(ctx context.Context, fp *bstyp
 		status = proto.FinalityProviderStatus_INACTIVE
 	}
 
-	if err := app.fpApp.GetFinalityProviderStore().SetFpStatus(btcPk, status); err != nil {
+	if err := app.fps.SetFpStatus(btcPk, status); err != nil {
 		return fmt.Errorf("failed to update status for finality provider %s: %w", fp.BtcPk.MarshalHex(), err)
 	}
 
