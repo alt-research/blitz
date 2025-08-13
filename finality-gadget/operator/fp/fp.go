@@ -9,7 +9,6 @@ import (
 	bstypes "github.com/babylonlabs-io/babylon/v3/x/btcstaking/types"
 	fpcc "github.com/babylonlabs-io/finality-provider/clientcontroller"
 	"github.com/babylonlabs-io/finality-provider/clientcontroller/api"
-	ccapi "github.com/babylonlabs-io/finality-provider/clientcontroller/api"
 	"github.com/babylonlabs-io/finality-provider/clientcontroller/babylon"
 	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
 	"github.com/babylonlabs-io/finality-provider/finality-provider/proto"
@@ -23,8 +22,8 @@ import (
 type fpsCmdProvider struct {
 	logger *zap.Logger
 
-	cc          ccapi.BabylonController
-	consumerCon ccapi.ConsumerController
+	cc          api.BabylonController
+	consumerCon api.ConsumerController
 	fps         *store.FinalityProviderStore
 }
 
