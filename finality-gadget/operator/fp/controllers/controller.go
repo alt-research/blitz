@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	bbnclient "github.com/babylonlabs-io/babylon/v3/client/client"
@@ -35,7 +34,6 @@ type OrbitConsumerController struct {
 	blitzMetrics *metrics.FpMetrics
 	metricsMu    sync.Mutex
 
-	activeHeight    uint64
 	backHeightCount uint64
 
 	bbnClient *bbnclient.Client
@@ -69,12 +67,17 @@ func NewOrbitConsumerController(
 	// Init local DB for storing and querying blocks
 	db, err := db.NewBBoltHandler(cfg.Babylon.FinalityGadgetCfg.DBFilePath, zapLogger)
 	if err != nil {
-		return nil, errors.Errorf("failed to create DB handler: %w", err)
+		return nil, fmt.Errorf("failed to create DB handler: %w", err)
 	}
-	defer db.Close()
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			zapLogger.Sugar().Errorf("failed to close db: %v", err)
+		}
+	}()
 	err = db.CreateInitialSchema()
 	if err != nil {
-		return nil, errors.Errorf("create initial buckets error: %w", err)
+		return nil, fmt.Errorf("create initial buckets error: %w", err)
 	}
 
 	res := &OrbitConsumerController{

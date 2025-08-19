@@ -12,7 +12,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ethereum/go-ethereum/node"
-	"github.com/ethereum/go-ethereum/rpc"
 	gethrpc "github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/alt-research/blitz/finality-gadget/client/l2eth"
@@ -156,10 +155,10 @@ func (h *JsonRpcHandler) init(ctx context.Context) error {
 
 func (h *JsonRpcHandler) GetBlockByNumber(
 	ctx context.Context,
-	number rpc.BlockNumber, fullTx bool,
+	number gethrpc.BlockNumber, fullTx bool,
 ) (map[string]json.RawMessage, error) {
 	// for no finalized block number request, we just return the block from chain api
-	if number != rpc.FinalizedBlockNumber {
+	if number != gethrpc.FinalizedBlockNumber {
 		var raw map[string]json.RawMessage
 		err := h.ethClient.Client.Client().CallContext(ctx, &raw, "eth_getBlockByNumber", number.String(), fullTx)
 		if err != nil {
@@ -180,7 +179,7 @@ func (h *JsonRpcHandler) GetBlockByNumber(
 
 	var raw map[string]json.RawMessage
 	err = h.ethClient.Client.Client().CallContext(ctx, &raw, "eth_getBlockByNumber",
-		rpc.BlockNumber(finalized).String(),
+		gethrpc.BlockNumber(finalized).String(),
 		fullTx)
 	if err != nil {
 		return nil, err

@@ -3,6 +3,7 @@ package signer
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -46,10 +47,15 @@ func (s *FinalityGadgetSignerService) Start(ctx context.Context) error {
 
 	s.logger.Info("Starting finality gadget signer service", "name", s.cfg.Common.Name)
 
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
+		case <-ticker.C:
+			s.logger.Debug("on FinalityGadgetSignerService service ticker")
 		}
 	}
 }

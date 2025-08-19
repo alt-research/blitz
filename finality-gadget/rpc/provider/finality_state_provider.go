@@ -88,7 +88,7 @@ func NewFinalizedStateProvider(
 
 	// Create cosmwasm client
 	logger.Sugar().Infof("the fg contract address %s", cfg.Babylon.FinalityGadgetCfg.FGContractAddress)
-	cwClient := cwclient.NewCosmWasmClient(babylonClient.QueryClient.RPCClient, cfg.Babylon.FinalityGadgetCfg.FGContractAddress)
+	cwClient := cwclient.NewCosmWasmClient(babylonClient.RPCClient, cfg.Babylon.FinalityGadgetCfg.FGContractAddress)
 
 	l2Client, err := l2eth.NewL2EthClient(ctx, &cfg.Layer2)
 	if err != nil {
@@ -524,7 +524,7 @@ func (p *FinalizedStateProvider) getBlockHeightByTimestamp(block *types.Block) (
 
 }
 
-func (p *FinalizedStateProvider) queryEarliestActiveDelBtcHeight(fpPubkeyHexList []string) (uint32, error) {
+func (p *FinalizedStateProvider) QueryEarliestActiveDelBtcHeight(fpPubkeyHexList []string) (uint32, error) {
 	key := strings.Join(fpPubkeyHexList, ",")
 
 	res, useCache := func() (uint32, bool) {
