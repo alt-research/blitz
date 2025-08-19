@@ -53,6 +53,13 @@ func (e *EOTSManagerClient) CreateRandomnessPairList(uid []byte, chainID []byte,
 	return res, err
 }
 
+func (e *EOTSManagerClient) CreateRandomnessPairListWithInterval(uid []byte, chainID []byte, startHeight uint64, num uint32, interval uint64) ([]*btcec.FieldVal, error) {
+	res, err := e.inner.CreateRandomnessPairListWithInterval(uid, chainID, startHeight, num, interval)
+	e.logger.Sugar().Debugf("CreateRandomnessPairListWithInterval %v %v %v", startHeight, interval, res)
+
+	return res, err
+}
+
 // SignEOTS signs an EOTS using the private key of the finality provider and the corresponding
 // secret randomness of the given chain at the given height
 // It fails if the finality provider does not exist or there's no randomness committed to the given height
