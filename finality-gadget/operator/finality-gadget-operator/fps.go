@@ -46,7 +46,7 @@ func fpsRestore(cliCtx *cli.Context) error {
 		return fmt.Errorf("failed to create params for app: %w", err)
 	}
 
-	app, err := fp.NewFpsCmdProvider(fpConfig.Common, dbBackend, zapLogger)
+	app, err := fp.NewFpsCmdProvider(fpConfig, dbBackend, zapLogger)
 	if err != nil {
 		return fmt.Errorf("failed to create cmd provider: %w", err)
 	}
@@ -76,7 +76,7 @@ func fpsShow(cliCtx *cli.Context) error {
 		return fmt.Errorf("failed to create params for app: %w", err)
 	}
 
-	app, err := fp.NewFpsCmdProvider(fpConfig.Common, dbBackend, zapLogger)
+	app, err := fp.NewFpsCmdProvider(fpConfig, dbBackend, zapLogger)
 	if err != nil {
 		return fmt.Errorf("failed to create cmd provider: %w", err)
 	}

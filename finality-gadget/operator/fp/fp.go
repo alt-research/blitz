@@ -7,10 +7,10 @@ import (
 
 	bbntypes "github.com/babylonlabs-io/babylon/v3/types"
 	bstypes "github.com/babylonlabs-io/babylon/v3/x/btcstaking/types"
+	"github.com/babylonlabs-io/finality-provider/bsn/rollup/clientcontroller"
+	rollupfpcfg "github.com/babylonlabs-io/finality-provider/bsn/rollup/config"
 	fpcc "github.com/babylonlabs-io/finality-provider/clientcontroller"
 	"github.com/babylonlabs-io/finality-provider/clientcontroller/api"
-	"github.com/babylonlabs-io/finality-provider/clientcontroller/babylon"
-	fpcfg "github.com/babylonlabs-io/finality-provider/finality-provider/config"
 	"github.com/babylonlabs-io/finality-provider/finality-provider/proto"
 	"github.com/babylonlabs-io/finality-provider/finality-provider/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -28,11 +28,11 @@ type fpsCmdProvider struct {
 }
 
 func NewFpsCmdProvider(
-	cfg *fpcfg.Config,
+	cfg *rollupfpcfg.RollupFPConfig,
 	db kvdb.Backend,
 	logger *zap.Logger,
 ) (*fpsCmdProvider, error) {
-	cc, err := fpcc.NewBabylonController(cfg.BabylonConfig, logger)
+	cc, err := fpcc.NewBabylonController(cfg.Common.BabylonConfig, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create rpc client for the Babylon chain: %w", err)
 	}
@@ -40,7 +40,7 @@ func NewFpsCmdProvider(
 		return nil, fmt.Errorf("failed to start rpc client for the Babylon chain: %w", err)
 	}
 
-	consumerCon, err := babylon.NewBabylonConsumerController(cfg.BabylonConfig, logger)
+	consumerCon, err := clientcontroller.NewRollupBSNController(cfg, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create rpc client for the consumer chain babylon: %w", err)
 	}
