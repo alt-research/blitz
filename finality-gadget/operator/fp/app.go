@@ -12,6 +12,7 @@ import (
 
 	"github.com/babylonlabs-io/babylon/v3/types"
 	rollupfpcfg "github.com/babylonlabs-io/finality-provider/bsn/rollup/config"
+	rollupserv "github.com/babylonlabs-io/finality-provider/bsn/rollup/service"
 	fpcc "github.com/babylonlabs-io/finality-provider/clientcontroller"
 	ccapi "github.com/babylonlabs-io/finality-provider/clientcontroller/api"
 	fpeotsmanager "github.com/babylonlabs-io/finality-provider/eotsmanager"
@@ -94,7 +95,7 @@ func NewFinalityProviderApp(
 	ctx context.Context,
 	config *fpcfg.Config,
 	cc ccapi.BabylonController,
-	consumerCon ccapi.ConsumerController,
+	consumerCon *controllers.OrbitConsumerController,
 	em fpeotsmanager.EOTSManager,
 	db kvdb.Backend,
 	blitzMetrics *metrics.FpMetrics,
@@ -109,30 +110,48 @@ func NewFinalityProviderApp(
 		return nil, fmt.Errorf("failed to initiate public randomness store: %w", err)
 	}
 
-	rndCommiter := service.NewDefaultRandomnessCommitter(
+	// For rollup environments, always use RollupRandomnessCommitter
+	contractConfig, err := consumerCon.QueryContractConfig(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to query contract config: %w", err)
+	}
+
+	logger.Info("using RollupRandomnessCommitter for rollup environment",
+		zap.Uint64("finality_signature_interval", contractConfig.FinalitySignatureInterval))
+
+	rndCommitter := rollupserv.NewRollupRandomnessCommitter(
 		service.NewRandomnessCommitterConfig(config.NumPubRand, int64(config.TimestampingDelayBlocks), config.ContextSigningHeight),
 		service.NewPubRandState(pubRandStore),
 		consumerCon,
 		em,
 		logger,
 		fpMetrics,
+		contractConfig.FinalitySignatureInterval,
 	)
 
 	heightDeterminer := service.NewStartHeightDeterminer(consumerCon, config.PollerConfig, logger)
-	fsCfg := service.NewDefaultFinalitySubmitterConfig(
-		config.MaxSubmissionRetries,
-		config.ContextSigningHeight,
-		config.SubmissionRetryInterval,
-	)
-	finalitySubmitter := service.NewDefaultFinalitySubmitter(consumerCon, em, rndCommiter.GetPubRandProofList, fsCfg, logger, fpMetrics)
 
+	logger.Info("using RollupFinalitySubmitter for rollup environment",
+		zap.Uint64("finality_signature_interval", contractConfig.FinalitySignatureInterval))
+
+	// For rollup environments, use RollupFinalitySubmitter for sparse randomness generation
+	finalitySubmitter := rollupserv.NewRollupFinalitySubmitter(consumerCon,
+		em,
+		rndCommitter.GetPubRandProofList,
+		service.NewDefaultFinalitySubmitterConfig(config.MaxSubmissionRetries,
+			config.ContextSigningHeight,
+			config.SubmissionRetryInterval),
+		logger,
+		fpMetrics,
+		contractConfig.FinalitySignatureInterval,
+	)
 	fpApp, err := service.NewFinalityProviderApp(
 		config,
 		cc,
 		consumerCon,
 		em,
 		poller,
-		rndCommiter,
+		rndCommitter,
 		heightDeterminer,
 		finalitySubmitter,
 		fpMetrics,
