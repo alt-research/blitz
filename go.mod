@@ -340,6 +340,8 @@ require (
 )
 
 replace (
+	// Fix cometbft security vulnerability (CVE)
+	github.com/cometbft/cometbft => github.com/cometbft/cometbft v0.38.21
 	// core v0.12 was tagged wrong
 	cosmossdk.io/core => cosmossdk.io/core v0.11.3
 	// use cosmos fork of keyring
