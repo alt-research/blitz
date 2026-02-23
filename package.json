@@ -55,6 +55,7 @@
     "source-map-support": "^0.5.21"
   },
   "resolutions": {
-    "glob": "^11.1.0"
+    "glob": "^11.1.0",
+    "bn.js": ">=5.2.3"
   }
 }
